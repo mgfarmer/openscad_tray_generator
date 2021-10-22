@@ -1,0 +1,62 @@
+{
+    "parameterSets": {
+        "internal-cross": {
+            "corner_radius_ratio": "0.5",
+            "cup_mode": "Custom Ratio Divisions",
+            "cup_ratios_length": "[1, 1]",
+            "cup_ratios_width": "[1]",
+            "cups_across_width": "2",
+            "cups_along_length": "2",
+            "custom_divs": "[[\"-\", 0.5, [0.25, 0.75]], [\"|\", 0.5, [0.25, 0.75]]]",
+            "divider_thickness": "0.071",
+            "floor_thickness": "0.071",
+            "interlock_gap": "0.003",
+            "interlock_height": "0.1",
+            "scale": "25.4",
+            "square_cup_size": "1",
+            "tray_height": "1",
+            "tray_length": "4",
+            "tray_width": "4",
+            "wall_thickness": "0.071"
+        },
+        "impereal defaults": {
+            "corner_radius_ratio": "0.5",
+            "cup_mode": "Square Cups",
+            "cup_ratios_length": "[1, 1, 1, 1, 1]",
+            "cup_ratios_width": "[1, 1, 1, 1, 1]",
+            "cups_across_width": "1",
+            "cups_along_length": "1",
+            "custom_divs": "[[\"-\", 0.5, [0.25, 0.75]], [\"|\", 0.5, [0.25, 0.75]]]",
+            "divider_thickness": "0.071",
+            "floor_thickness": "0.071",
+            "interlock_gap": "0.003",
+            "interlock_height": "0.1",
+            "scale": "25.4",
+            "square_cup_size": "1",
+            "tray_height": "1",
+            "tray_length": "4",
+            "tray_width": "2",
+            "wall_thickness": "0.071"
+        },
+        "metric defaults": {
+            "corner_radius_ratio": "0.5",
+            "cup_mode": "Square Cups",
+            "cup_ratios_length": "[1, 1, 1, 1, 1]",
+            "cup_ratios_width": "[1, 1, 1, 1, 1]",
+            "cups_across_width": "1",
+            "cups_along_length": "1",
+            "custom_divs": "[[\"-\", 0.5, [0.25, 0.75]], [\"|\", 0.5, [0.25, 0.75]]]",
+            "divider_thickness": "0.18",
+            "floor_thickness": "0.18",
+            "interlock_gap": "0.01",
+            "interlock_height": "0.2",
+            "scale": "10",
+            "square_cup_size": "2.5",
+            "tray_height": "2.5",
+            "tray_length": "10",
+            "tray_width": "5",
+            "wall_thickness": "0.18"
+        }
+    },
+    "fileFormatVersion": "1"
+}
