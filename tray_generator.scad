@@ -14,7 +14,7 @@ Tray_Height = 1.0; // [0.0:0.25:8]
 Create_A_Lid = false;
 
 // Select a build mode, then use the controls in the same named tabs to specify generation parameters
-Build_Mode = "Square Cups"; // ["Square Cups", "Length/Width Cups", "Length/Width Cup Ratios", "Custom Divisions per Column or Row", "Custom Ratio Divisions", "Tray Lid"]
+Build_Mode = "Square Cups"; // ["Just the Tray", "Square Cups", "Length/Width Cups", "Length/Width Cup Ratios", "Custom Divisions per Column or Row", "Custom Ratio Divisions", "Tray Lid"]
 
 /* [Square Cups] */
 // If not 0, specifies the size of square cups to be create, both tray_length and tray_width should be a multiple of this value.  If your tray is 8x4 and you use a cup size of 1 you will get 32 cups. 
@@ -176,7 +176,6 @@ module make_l_div(pos, from=0, to=1.0, hscale=1.0) {
     lend = (_length*to) - (_length/2);
     llen = (lend - lstart); //to-from) * scaled_tray_length; // + (scaled_divider_thickness/2);
     hdiv = (scaled_tray_height-scaled_interlock_height) * hscale;
-    echo(from, to);
     union() {
         translate([lstart+(llen/2),wpos,hdiv/2]) {
             cube([llen,scaled_divider_thickness,hdiv], center=true);
@@ -201,7 +200,6 @@ module make_w_div(pos, from=0, to=1.0, hscale=1.0) {
     wend = (scaled_tray_width*to) - (scaled_tray_width/2);
     wlen = (to-from) * scaled_tray_width;
     hdiv = (scaled_tray_height-scaled_interlock_height) * hscale;
-    echo(from, to);
     translate([lpos,wstart+(wlen/2),hdiv/2]) {
         union() {
             cube([scaled_divider_thickness,wlen, hdiv], center=true);
@@ -345,6 +343,9 @@ module make_cups(ratios, orient="length", from=0.0, to=1.0, hscale=1.0) {
     make_dividers(divs2, orient, from, to, hscale);
 }
 
+if (Build_Mode == "Just the Tray") {
+    make_tray();
+}
 
 if (Build_Mode == "Square Cups") {
     lcups = Tray_Length/Square_Cup_Size;
@@ -387,16 +388,10 @@ module make_walls(section, mode, walls, divisions) {
     if (section < len(divisions)-1) {
         from = divisions[section];
         to = divisions[section+1];
-        //echo(section, from, to);
-        //echo(walls);
         if (is_num(walls[2])) {
             ratios = [ for( i = [1 : 1 : walls[1]]) walls[1+i] ];
-            //echo(ratios);
             make_cups(ratios, mode, from, to);
-            // divisions = concat( [0.0], make_normalized_divs(ratios), [1.0]);
-            // start = 2 + divs;
             wall_specs = sub_vect(walls, 2 + walls[1]); 
-            //echo(wall_specs);
             make_walls(section+1, mode, wall_specs, divisions);
         }
         else {
@@ -405,7 +400,6 @@ module make_walls(section, mode, walls, divisions) {
             wall_specs = sub_vect(walls, 2); 
             make_walls(section+1, mode, wall_specs, divisions);
         }
-
     }
 }
 
