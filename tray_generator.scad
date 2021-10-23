@@ -108,13 +108,13 @@ scaled_block_handle_width = Scale_Units * Block_Width_or_Bar_Diameter;
 scaled_block_handle_height = Scale_Units * Block_Handle_Height;
 
 // A function to add up the elements of an vector.
-function add(v, i = 0, r = 0) = i < len(v) ? add(v, i + 1, r + v[i]) : r;
+function add_vect(v, i = 0, r = 0) = i < len(v) ? add_vect(v, i + 1, r + v[i]) : r;
 
 function make_normalized_divs(ratios) = (
-    let (total = add(ratios))
+    let (total = add_vect(ratios))
     let (mult = 1.0/total)
     let (divs = [ for(i=ratios) (i*mult) ])
-    [ for(i=[len(divs)-1:-1:1]) add(divs, i, 0)]
+    [ for(i=[len(divs)-1:-1:1]) add_vect(divs, i, 0)]
 );
 
 module mkshell (length, width, height, wall, radius, offset=0, offset2=0) {
@@ -180,11 +180,15 @@ module make_l_div(pos, from=0, to=1.0, hscale=1.0) {
         translate([lstart+(llen/2),wpos,hdiv/2]) {
             cube([llen,scaled_divider_thickness,hdiv], center=true);
         }
-        translate([lstart,wpos,hdiv/2]) {
-            cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
+        if (from > 0.0) {
+            translate([lstart,wpos,hdiv/2]) {
+                cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
+            }
         }
-        translate([lend,wpos,hdiv/2]) {
-            cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
+        if (to < 1.0) {
+            translate([lend,wpos,hdiv/2]) {
+                cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
+            }
         }
     }
 }
@@ -320,25 +324,14 @@ module make_dividers(divs, orient="length", from=0, to=1.0, hscale=1.0) {
     }
 }
 
-module make_equal_cups(num_divs, orient="length") {
+module make_equal_cups(num_divs, orient="length", from=0.0, to=1.0) {
     increment = 1.0/num_divs;
     for ( i = [increment : increment : (1.0-increment)] ){
-        make_div(orient, i);
-    }
-}
-
-module test_tray() {
-    union() {
-        make_tray();
-        make_cups([1, 1, 2]);
-        make_cups([1, 1, 2],"width");
+        make_div(orient, i, from, to);
     }
 }
 
 module make_cups(ratios, orient="length", from=0.0, to=1.0, hscale=1.0) {
-    total = add(ratios);
-    mult = 1.0/total;
-    divs = [ for(i=ratios) (i*mult) ];
     divs2 = make_normalized_divs(ratios);
     make_dividers(divs2, orient, from, to, hscale);
 }
@@ -383,19 +376,20 @@ if (Build_Mode == "Length/Width Cup Ratios") {
 }
 
 function sub_vect(vect, start) = [for( i = [start : 1 : len(vect)-1]) vect[i] ];
+function rev_vect(vect) = [for( i = [len(vect)-1 : -1 : 0]) vect[i] ];
 
 module make_walls(section, mode, walls, divisions) {
     if (section < len(divisions)-1) {
         from = divisions[section];
         to = divisions[section+1];
         if (is_num(walls[2])) {
-            ratios = [ for( i = [1 : 1 : walls[1]]) walls[1+i] ];
+            ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) walls[1+i] ]);
             make_cups(ratios, mode, from, to);
             wall_specs = sub_vect(walls, 2 + walls[1]); 
             make_walls(section+1, mode, wall_specs, divisions);
         }
         else {
-            ratios = [ for( i = [1 : 1 : walls[1]]) 1 ];
+            ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) 1 ]);
             make_cups(ratios, mode, from, to);
             wall_specs = sub_vect(walls, 2); 
             make_walls(section+1, mode, wall_specs, divisions);
@@ -403,6 +397,7 @@ module make_walls(section, mode, walls, divisions) {
     }
 }
 
+// ["|", 5, 3, 1.5, 3, 3, 3, "*", 3, "*", 3, "*", 3, "*", 2, "*", 5]
 if (Build_Mode == "Custom Divisions per Column or Row") {
     union() {
         make_tray();
@@ -410,7 +405,7 @@ if (Build_Mode == "Custom Divisions per Column or Row") {
         other_mode = (mode == "|")?"-":"|";
         divs = Custom_Col_Row_Ratios[1];
         if (is_num(Custom_Col_Row_Ratios[2])) {
-            ratios = [ for( i = [0 : 1 : divs-1]) Custom_Col_Row_Ratios[2+i] ];
+            ratios = rev_vect([ for( i = [0 : 1 : divs-1]) Custom_Col_Row_Ratios[2+i] ]);
             make_cups(ratios, mode);
             divisions = concat( [0.0], make_normalized_divs(ratios), [1.0]);
             start = 2 + divs;
