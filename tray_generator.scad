@@ -60,15 +60,20 @@ Divider_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
 Corner_Roundness = 0.5; // [0.00:0.01:1.00]
 
 /* [Lid Parameters] */
-Lid_Style = "No Handle"; // ["No Handle", "Finger Holes", "Block Handle", "Bar Handle"]
-Lid_Thickness = 0.07; // [0.05:0.01:0.50]
+Lid_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes", "Block_Handle", "Bar_Handle"]
+
+// How thick should the lid be.  This is the height above the top edge of the tray.  If you want a fully recessed lid, specify 0 here.
+Lid_Thickness = 0.07; // [0.00:0.01:0.50]
+
+Number_Of_Finger_Holes = 1; // [1, 2]
+
 Finger_Hole_Style = "Square"; // ["Square", "Round", "Diamond"]
 
-// Center-to-center distance between the finger holes
-Finger_Hole_Separation = 2.0; // [1.0:0.25:8.0]
+// Normalized length-wise position from the center of the tray to the finger hole(s). 0 will put the hole(s) in the center. 1.0 will center the hole on the outside of the edge.
+Finger_Hole_Position = .75; // [0.0:0.01:1.0]
 
 // Make them big enough for your fingers
-Finger_Hole_Diameter = 0.5; // [0.5:0.05:2.5]
+Finger_Hole_Diameter = 0.7; // [0.5:0.05:2.5]
 
 // The Heght of the handle, above the lid surface.
 Block_Handle_Height = 0.375; // [0.25:0.005:1.5]
@@ -101,7 +106,7 @@ scaled_interlock_gap = Scale_Units * Interlock_Gap;
 scaled_interlock_height = Scale_Units * Interlock_Height;
 
 scaled_lid_thickness = Scale_Units * Lid_Thickness;
-scaled_finger_hole_separation = Scale_Units * Finger_Hole_Separation;
+scaled_Finger_Hole_Position = Scale_Units * Finger_Hole_Position;
 scaled_finger_hole_diameter = Scale_Units * Finger_Hole_Diameter;
 scaled_block_handle_length = Scale_Units * Block_or_Bar_Handle_Length;
 scaled_block_handle_width = Scale_Units * Block_Width_or_Bar_Diameter;
@@ -253,12 +258,12 @@ module make_lid() {
                 }
             }
             rotate([0,0,Rotate_Handle]) {
-                if (Lid_Style == "Block Handle") {
+                if (Lid_Style == "Block_Handle") {
                     translate([0,0, scaled_lid_thickness+scaled_block_handle_height/2 - 0.001]) {
                         cube([scaled_block_handle_length, scaled_block_handle_width, scaled_block_handle_height], center=true);
                     }
                 }
-                if (Lid_Style == "Bar Handle") {
+                if (Lid_Style == "Bar_Handle") {
                     translate([0,0, (scaled_lid_thickness + scaled_block_handle_width)/2]) {
                         rotate([0,90,0]) {
                             cylinder(scaled_block_handle_length, r=scaled_block_handle_width/2, center=true);
@@ -267,10 +272,11 @@ module make_lid() {
                 }
             }
         }
-        if (Lid_Style == "Finger Holes") {
+        if (Lid_Style == "Finger_Holes") {
             rotate([0,0,Rotate_Handle]) {
                 height = scaled_lid_thickness+scaled_interlock_height*2;
-                translate ([scaled_finger_hole_separation/2, 0, 0]) {
+                hole_offset = scaled_tray_length/2 * Finger_Hole_Position;
+                translate ([hole_offset, 0, 0]) {
                     if (Finger_Hole_Style == "Round") {
                         cylinder(height, r=scaled_finger_hole_diameter/2, center=true);
                     }
@@ -283,16 +289,18 @@ module make_lid() {
                         }
                     }
                 }
-                translate ([-scaled_finger_hole_separation/2, 0, 0]) {
-                    if (Finger_Hole_Style == "Round") {
-                        cylinder(height, r=scaled_finger_hole_diameter/2, center=true);
-                    }
-                    if (Finger_Hole_Style == "Square") {
-                        cube([scaled_finger_hole_diameter, scaled_finger_hole_diameter, height], center=true);
-                    }
-                    if (Finger_Hole_Style == "Diamond") {
-                        rotate([0,0,45]) {
+                if (Number_Of_Finger_Holes == 2) {
+                    translate ([-hole_offset, 0, 0]) {
+                        if (Finger_Hole_Style == "Round") {
+                            cylinder(height, r=scaled_finger_hole_diameter/2, center=true);
+                        }
+                        if (Finger_Hole_Style == "Square") {
                             cube([scaled_finger_hole_diameter, scaled_finger_hole_diameter, height], center=true);
+                        }
+                        if (Finger_Hole_Style == "Diamond") {
+                            rotate([0,0,45]) {
+                                cube([scaled_finger_hole_diameter, scaled_finger_hole_diameter, height], center=true);
+                            }
                         }
                     }
                 }
