@@ -14,7 +14,7 @@ Tray_Height = 1.0; // [0.0:0.25:8]
 Create_A_Lid = false;
 
 // Select a build mode, then use the controls in the same named tabs to specify generation parameters
-Build_Mode = "Square Cups"; // ["Just the Tray", "Square Cups", "Length/Width Cups", "Length/Width Cup Ratios", "Custom Divisions per Column or Row", "Custom Ratio Divisions", "Tray Lid"]
+Build_Mode = "Square_Cups"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
 
 /* [Square Cups] */
 // If not 0, specifies the size of square cups to be create, both tray_length and tray_width should be a multiple of this value.  If your tray is 8x4 and you use a cup size of 1 you will get 32 cups. 
@@ -107,9 +107,18 @@ scaled_block_handle_length = Scale_Units * Block_or_Bar_Handle_Length;
 scaled_block_handle_width = Scale_Units * Block_Width_or_Bar_Diameter;
 scaled_block_handle_height = Scale_Units * Block_Handle_Height;
 
+echo(Build_Mode);
+
 // A function to add up the elements of an vector.
 function add_vect(v, i = 0, r = 0) = i < len(v) ? add_vect(v, i + 1, r + v[i]) : r;
 
+// Extract all elements starting at 'start' into a new vector
+function sub_vect(vect, start) = [for( i = [start : 1 : len(vect)-1]) vect[i] ];
+
+// Reverse the elements in a vector, returning a new vector, of course
+function rev_vect(vect) = [for( i = [len(vect)-1 : -1 : 0]) vect[i] ];
+
+// Convert a list of ratios into a list of normalized division.
 function make_normalized_divs(ratios) = (
     let (total = add_vect(ratios))
     let (mult = 1.0/total)
@@ -200,26 +209,24 @@ module make_w_div(pos, from=0, to=1.0, hscale=1.0) {
     // hscale can be used to scale the height of the division wall
     llen = scaled_tray_length-scaled_divider_thickness;
     lpos = (llen*pos) - (llen/2);
-    wstart = (scaled_tray_width*from) - (scaled_tray_width/2);
-    wend = (scaled_tray_width*to) - (scaled_tray_width/2);
-    wlen = (to-from) * scaled_tray_width;
+    _length = scaled_tray_width - scaled_wall_thickness;
+    wstart = (_length*from) - (_length/2);
+    wend = (_length*to) - (_length/2);
+    wlen = (wend-wstart);
     hdiv = (scaled_tray_height-scaled_interlock_height) * hscale;
-    translate([lpos,wstart+(wlen/2),hdiv/2]) {
-        union() {
+    union() {
+        translate([lpos,wstart+(wlen/2),hdiv/2]) {
             cube([scaled_divider_thickness,wlen, hdiv], center=true);
-            cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
-            if (from > 0.0) {
-                translate([0,wstart,0]) {
-                    cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
-                }
+        }
+        if (from > 0.0) {
+            translate([lpos,wstart,hdiv/2]) {
+                cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
             }
-
-            if (to < 1.0) {
-                translate([0,wend,0]) {
-                    cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
-                }
+        }
+        if (to < 1.0) {
+            translate([lpos,wend,hdiv/2]) {
+                cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
             }
-
         }
     }
 }
@@ -336,11 +343,11 @@ module make_cups(ratios, orient="length", from=0.0, to=1.0, hscale=1.0) {
     make_dividers(divs2, orient, from, to, hscale);
 }
 
-if (Build_Mode == "Just the Tray") {
+if (Build_Mode == "Just_the_Tray") {
     make_tray();
 }
 
-if (Build_Mode == "Square Cups") {
+if (Build_Mode == "Square_Cups") {
     lcups = Tray_Length/Square_Cup_Size;
     wcups = Tray_Width/Square_Cup_Size;
     union() {
@@ -350,7 +357,7 @@ if (Build_Mode == "Square Cups") {
     }
 }
 
-if (Build_Mode == "Length/Width Cups") {
+if (Build_Mode == "Length_Width_Cups") {
     union() {
         make_tray();
         if (Cup_Along_Length > 0) {
@@ -362,7 +369,7 @@ if (Build_Mode == "Length/Width Cups") {
     }
 }
 
-if (Build_Mode == "Length/Width Cup Ratios") {
+if (Build_Mode == "Length_Width_Cup_Ratios") {
     union() {
         make_tray();
         if (Cup_Along_Length > 0) {
@@ -374,9 +381,6 @@ if (Build_Mode == "Length/Width Cup Ratios") {
         }
     }
 }
-
-function sub_vect(vect, start) = [for( i = [start : 1 : len(vect)-1]) vect[i] ];
-function rev_vect(vect) = [for( i = [len(vect)-1 : -1 : 0]) vect[i] ];
 
 module make_walls(section, mode, walls, divisions) {
     if (section < len(divisions)-1) {
@@ -398,7 +402,7 @@ module make_walls(section, mode, walls, divisions) {
 }
 
 // ["|", 5, 3, 1.5, 3, 3, 3, "*", 3, "*", 3, "*", 3, "*", 2, "*", 5]
-if (Build_Mode == "Custom Divisions per Column or Row") {
+if (Build_Mode == "Custom_Divisions_per_Column_or_Row") {
     union() {
         make_tray();
         mode = Custom_Col_Row_Ratios[0];
@@ -433,18 +437,18 @@ module make_custom_div(div_list) {
     }
 }
 
-if (Build_Mode == "Custom Ratio Divisions") {
+if (Build_Mode == "Custom_Ratio_Divisions") {
     union() {
         make_tray();
         make_custom_div(Custom_Division_List);
     }
 }
 
-if (Build_Mode == "Tray Lid") {
+if (Build_Mode == "Tray_Lid") {
     make_lid();
 }
 
-if (Build_Mode != "Tray Lid" && Create_A_Lid == true) {
+if (Build_Mode != "Tray_Lid" && Create_A_Lid == true) {
     translate([0, (scaled_tray_width + Scale_Units), 0]) {
         make_lid();
     }
