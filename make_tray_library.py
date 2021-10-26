@@ -215,7 +215,7 @@ def create_lids(length, width, count_only):
         folder_path = f"{args.folder}"
 
     if (count_only):
-        number_of_trays += 3
+        number_of_trays += 4
         return
 
     # Recessed Lid
@@ -254,6 +254,26 @@ def create_lids(length, width, count_only):
                                 ])
         generate_tray(cmd, files)
 
+    # Interlocking Lid
+    file_base = f"{folder_path}/tray_lid_interlocking_finger_{numstr(length)}x{numstr(width)}"
+    files = {
+        "folder": folder_path,
+        "base": file_base,
+        "png": f"{file_base}.png",
+        "model": f"{file_base}.{args.export_model_as}",
+        "gcode": f"{file_base}.gcode"
+    }
+    if (args.regen or not os.path.exists(files['model'])):
+        cmd = get_oscad_command(length, width, 0.0,
+                                [
+                                    "-D", "Build_Mode=\"Tray_Lid\"",
+                                    "-D", f"Lid_Style=\"Finger_Holes\"",
+                                    "-D", f"Interlocking_Lid=\"true\"",
+                                    "-o", files['png'],
+                                ])
+        generate_tray(cmd, files)
+
+
     # Bar Handle Lid
     file_base = f"{folder_path}/tray_lid_handle_{numstr(length)}x{numstr(width)}"
     files = {
@@ -279,6 +299,7 @@ def enumerate_trays(count_only):
     for length in args.lengths:
         for width in args.widths:
             if width > length:
+                # This prevents duplicate trays
                 continue
             for height in args.heights:
                 create_square_cup_tray_variations(

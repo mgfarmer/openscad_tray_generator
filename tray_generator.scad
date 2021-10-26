@@ -65,6 +65,8 @@ Lid_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes", "Block_Handle", "Ba
 // How thick should the lid be.  This is the height above the top edge of the tray.  If you want a fully recessed lid, specify 0 here.
 Lid_Thickness = 0.07; // [0.00:0.01:0.50]
 
+Interlocking_Lid = false;
+
 Number_Of_Finger_Holes = 1; // [1, 2]
 
 Finger_Hole_Style = "Square"; // ["Square", "Round", "Diamond"]
@@ -257,6 +259,15 @@ module make_lid() {
                     scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
                 }
             }
+            if (Interlocking_Lid == true && scaled_lid_thickness > 0) {
+                translate([0,0,(scaled_lid_thickness+scaled_interlock_height/2)-0.001]) {
+                    difference() {
+                        mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+0.001, scaled_wall_thickness, scaled_corner_radius); 
+                        mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+0.1, 
+                        scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
+                    }
+                };
+            }
             rotate([0,0,Rotate_Handle]) {
                 if (Lid_Style == "Block_Handle") {
                     translate([0,0, scaled_lid_thickness+scaled_block_handle_height/2 - 0.001]) {
@@ -274,7 +285,7 @@ module make_lid() {
         }
         if (Lid_Style == "Finger_Holes") {
             rotate([0,0,Rotate_Handle]) {
-                height = scaled_lid_thickness+scaled_interlock_height*2;
+                height = scaled_lid_thickness+scaled_interlock_height*4;
                 hole_offset = scaled_tray_length/2 * Finger_Hole_Position;
                 translate ([hole_offset, 0, 0]) {
                     if (Finger_Hole_Style == "Round") {
