@@ -114,8 +114,6 @@ scaled_block_handle_length = Scale_Units * Block_or_Bar_Handle_Length;
 scaled_block_handle_width = Scale_Units * Block_Width_or_Bar_Diameter;
 scaled_block_handle_height = Scale_Units * Block_Handle_Height;
 
-echo(Build_Mode);
-
 // A function to add up the elements of an vector.
 function add_vect(v, i = 0, r = 0) = i < len(v) ? add_vect(v, i + 1, r + v[i]) : r;
 

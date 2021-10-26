@@ -42,16 +42,26 @@ def numstr(number):
         return int(number)
     return number
 
-def slice(tray_file_path_model, tray_file_path_gcode):
-    if args.slice and os.path.exists(tray_file_path_model) and (args.reslice or not os.path.exists(tray_file_path_gcode)):
+def slice(files, count_only, force_slice):
+    global number_of_trays_sliced
+
+    tray_file_path_model = files['model']
+    tray_file_path_gcode = files['gcode']
+    if not args.dryrun and not count_only:
+        if not os.path.exists(files['folder']):
+            os.makedirs(files['folder'])
+
+    if force_slice or args.slice and os.path.exists(tray_file_path_model) and (args.reslice or not os.path.exists(tray_file_path_gcode)):
+        number_of_trays_sliced += 1
         slice_cmd = get_slice_cmd(tray_file_path_model)
-        print("    ", f"Slicing: {tray_file_path_model}")
-        print("    ", " ".join(slice_cmd))
-        slicer = subprocess.run(slice_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                universal_newlines=True)
-        print(slicer.stdout)
-        if (slicer.returncode):
-            print(slicer.stderr)
+        if not count_only:
+            print("    ", f"Slicing: {tray_file_path_model}")
+        if not args.dryrun and not count_only:
+            slicer = subprocess.run(slice_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            print(slicer.stdout)
+            if (slicer.returncode):
+                print(slicer.stderr)
 
 
 def generate_tray(cmd, files, count_only):
@@ -60,7 +70,6 @@ def generate_tray(cmd, files, count_only):
     global number_of_trays_processed
     global number_of_trays_total
     global number_of_trays_generated
-    global number_of_trays_sliced
 
     if (count_only):
         number_of_trays += 1
@@ -82,26 +91,18 @@ def generate_tray(cmd, files, count_only):
             print(
                 f"Generating: ({number_of_trays_generated} of {number_of_trays_total}):\n     {_filestr}")
         
-        if not args.dryrun:
+        if not args.dryrun and not count_only:
             if not os.path.exists(files['folder']):
                 os.makedirs(files['folder'])
-                out = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                    universal_newlines=True)
-                print(out.stdout)
-                if (out.returncode == 0):
-                    print(out.stderr)
-                    return;
+            out = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True)
+            #print(out.stdout)
+            if (out.returncode != 0):
+                print(out.stderr)
+                return
         force_slice = True
             
-    if (force_slice or args.reslice or not os.path.exists(files['gcode'])):
-        number_of_trays_sliced += 1
-        if not count_only:        
-            print("    ", " ".join(get_slice_cmd(files['model'])))
-        if not args.dryrun:
-            if not os.path.exists(files['folder']):
-                os.makedirs(files['folder'])
-            slice(files['model'],
-                files['gcode'])
+    slice(files, count_only, force_slice)
             
 
 
