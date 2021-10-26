@@ -8,16 +8,16 @@ import subprocess
 global args
 
 # Total number of objects in the library
-global number_of_trays
+global number_of_objects
 
 # Total number of objects that will be generated during the run.
-global number_of_trays_total
+global number_of_objects_total
 
 # Count of object generated while running, for progrss reporting.
-global number_of_trays_generated
+global number_of_objects_generated
 
 # Count of object sliced while running, for progrss reporting.
-global number_of_trays_sliced
+global number_of_objects_sliced
 
 
 global scale_units
@@ -58,7 +58,7 @@ def numstr(number):
     return number
 
 def slice(files, count_only, force_slice):
-    global number_of_trays_sliced
+    global number_of_objects_sliced
 
     tray_file_path_model = files['model']
     tray_file_path_gcode = files['gcode']
@@ -67,10 +67,10 @@ def slice(files, count_only, force_slice):
             os.makedirs(files['folder'])
 
     if force_slice or args.slice and os.path.exists(tray_file_path_model) and (args.reslice or not os.path.exists(tray_file_path_gcode)):
-        number_of_trays_sliced += 1
+        number_of_objects_sliced += 1
         slice_cmd = get_slice_cmd(tray_file_path_model)
         if not count_only:
-            print("    ", f"Slicing: {tray_file_path_model}")
+            print("    ", f"Slicing:   {tray_file_path_model}")
         if not args.dryrun and not count_only:
             slicer = subprocess.run(slice_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                     universal_newlines=True)
@@ -79,14 +79,14 @@ def slice(files, count_only, force_slice):
                 print(slicer.stderr)
 
 
-def render_tray(cmd, files, count_only):
+def render_object(cmd, files, count_only):
     global args
-    global number_of_trays
-    global number_of_trays_total
-    global number_of_trays_generated
+    global number_of_objects
+    global number_of_objects_total
+    global number_of_objects_generated
 
     if (count_only):
-        number_of_trays += 1
+        number_of_objects += 1
 
     _files = [files['png']]
     if (not args.preview_only):
@@ -96,11 +96,11 @@ def render_tray(cmd, files, count_only):
     cmd += ["tray_generator.scad"]
 
     if (args.regen or not os.path.exists(files['model'])):
-        number_of_trays_generated += 1
+        number_of_objects_generated += 1
         _filestr = " ".join(_files)
         if not count_only:
-            print(
-                f"Generating: ({number_of_trays_generated} of {number_of_trays_total}):\n     {_filestr}")
+            print(f"Generating: ({number_of_objects_generated} of {number_of_objects_total}):")
+            print(f"     Rendering: {_filestr}")
 
         if not args.dryrun and not count_only:
             if not os.path.exists(files['folder']):
@@ -114,8 +114,8 @@ def render_tray(cmd, files, count_only):
         return True
     return False
 
-def generate_tray(cmd, files, count_only):
-    force_slice = render_tray(cmd, files, count_only)
+def generate_object(cmd, files, count_only):
+    force_slice = render_object(cmd, files, count_only)
     slice(files, count_only, force_slice)
             
 
@@ -127,7 +127,7 @@ def create_incremental_division_variants(length, width, height, count_only):
     wdivs = math.floor(width/args.width_div_minimum_size)
 
     # A record of square trays we've generated, so we don't do duplicates...
-    unique_sq_trays = []
+    unique_sq_objects = []
 
     for ldiv in range(1, ldivs+1):
         if (ldiv in args.length_skip_divs):
@@ -146,9 +146,9 @@ def create_incremental_division_variants(length, width, height, count_only):
             if length == width:
                 spec1 = f"{ldiv}x{wdiv}"
                 spec2 = f"{wdiv}x{ldiv}"
-                if spec1 in unique_sq_trays or spec2 in unique_sq_trays:
+                if spec1 in unique_sq_objects or spec2 in unique_sq_objects:
                     continue
-                unique_sq_trays += [spec1, spec2]
+                unique_sq_objects += [spec1, spec2]
 
             ht = height
 
@@ -156,9 +156,9 @@ def create_incremental_division_variants(length, width, height, count_only):
                 # Don't use a .0 decimal for integer heights in file names
                 ht = math.floor(height)
 
-            folder_path = f"{args.folder}/{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{ht}-{unit_name}-H"
+            folder_path = f"{args.output_folder}/{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{ht}-{unit_name}-H"
             if (args.flat):
-                folder_path = f"{args.folder}"
+                folder_path = f"{args.output_folder}"
 
             file_base = f"{folder_path}/tray_{numstr(length)}x{numstr(width)}x{numstr(ht)}_{ldiv}x{wdiv}_cups"
             files = {
@@ -177,7 +177,7 @@ def create_incremental_division_variants(length, width, height, count_only):
                                         "-o", files['png'],
                                     ])
 
-            generate_tray(cmd, files, count_only)
+            generate_object(cmd, files, count_only)
 
 
 def create_square_cup_tray_variations(length, width, height, count_only):
@@ -196,9 +196,9 @@ def create_square_cup_tray_variations(length, width, height, count_only):
                     # Don't use a .0 decimal for integer heights in file names
                     ht = math.floor(height)
 
-                folder_path = f"{args.folder}/{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(ht)}-{unit_name}-H"
+                folder_path = f"{args.output_folder}/{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(ht)}-{unit_name}-H"
                 if (args.flat):
-                    folder_path = f"{args.folder}"
+                    folder_path = f"{args.output_folder}"
 
                 file_base = f"{folder_path}/tray_{numstr(length)}x{numstr(width)}x{numstr(ht)}_{lcups}x{wcups}_cups"
                 files = {
@@ -216,15 +216,15 @@ def create_square_cup_tray_variations(length, width, height, count_only):
                                             "-o", files['png']
                                         ])
 
-                generate_tray(cmd, files, count_only)
+                generate_object(cmd, files, count_only)
 
 
 def create_lids(length, width, count_only):
     global args
 
-    folder_path = f"{args.folder}/{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W"
+    folder_path = f"{args.output_folder}/{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W"
     if (args.flat):
-        folder_path = f"{args.folder}"
+        folder_path = f"{args.output_folder}"
 
     # Recessed Lid
     file_base = f"{folder_path}/tray_lid_recessed_{numstr(length)}x{numstr(width)}"
@@ -241,7 +241,7 @@ def create_lids(length, width, count_only):
                                 "-D", f"Lid_Thickness=0",
                                 "-o", files['png'],
                             ])
-    generate_tray(cmd, files, count_only)
+    generate_object(cmd, files, count_only)
 
     # Non Recessed Lid
     file_base = f"{folder_path}/tray_lid_finger_{numstr(length)}x{numstr(width)}"
@@ -258,7 +258,7 @@ def create_lids(length, width, count_only):
                                 "-D", f"Lid_Style=\"Finger_Holes\"",
                                 "-o", files['png'],
                             ])
-    generate_tray(cmd, files, count_only)
+    generate_object(cmd, files, count_only)
 
     # Interlocking Lid
     file_base = f"{folder_path}/tray_lid_interlocking_finger_{numstr(length)}x{numstr(width)}"
@@ -276,7 +276,7 @@ def create_lids(length, width, count_only):
                                 "-D", f"Interlocking_Lid=true",
                                 "-o", files['png'],
                             ])
-    generate_tray(cmd, files, count_only)
+    generate_object(cmd, files, count_only)
 
 
     # Bar Handle Lid
@@ -294,10 +294,10 @@ def create_lids(length, width, count_only):
                                 "-D", f"Lid_Style=\"Bar_Handle\"",
                                 "-o", files['png'],
                             ])
-    generate_tray(cmd, files, count_only)
+    generate_object(cmd, files, count_only)
 
 
-def enumerate_trays(count_only):
+def enumerate_objects(count_only):
     global args
 
     for length in args.lengths:
@@ -354,10 +354,10 @@ if __name__ == "__main__":
                     help="Specifies a list of all the tray heights to generate. Can be fractional.")
 
     g0 = parser.add_argument_group('Generation Control Options')
-    g0.add_argument('-o', '--oscad', type=str, default=r"openscad",
+    g0.add_argument('--oscad', type=str, default=r"openscad",
                         help="The openscad executable.  The default value assumes it is in your path.  Otherwise specify the full path to the executable.")
 
-    g0.add_argument('-f', '--folder', type=str, default=r"trays",
+    g0.add_argument('-o', '--output_folder', type=str, default=r"",
                     help="Place all generated files into this folder.")
 
     g0.add_argument('--flat', type=str2bool, nargs="?", default=False, const=True,
@@ -421,6 +421,10 @@ if __name__ == "__main__":
     if args.count_only:
         args.dryrun = True
 
+    if not args.count_only and args.output_folder == "":
+        print("You need to specify an output folder (-o <folder>) so I know where to put everything.")
+        sys.exit(0)
+
     pattern = re.compile('(\w+)=(.*)')
 
     scale_units = 25.4
@@ -479,21 +483,21 @@ if __name__ == "__main__":
     ]
 
 
-    number_of_trays = 0
-    number_of_trays_generated = 0
-    number_of_trays_sliced = 0
-    number_of_trays_total = 0
+    number_of_objects = 0
+    number_of_objects_generated = 0
+    number_of_objects_sliced = 0
+    number_of_objects_total = 0
 
 
     # First rip through the generator and just count the number
     # of elements that will be generated.
-    enumerate_trays(count_only=True)
+    enumerate_objects(count_only=True)
 
-    count_summary =  f"   Number of trays in the library {number_of_trays}\n"
-    count_summary += f"   Number of trays generated: {number_of_trays_generated}\n"
-    count_summary += f"   Number of trays sliced: {number_of_trays_sliced}\n"
+    count_summary =  f"   Number of trays in the library {number_of_objects}\n"
+    count_summary += f"   Number of trays generated: {number_of_objects_generated}\n"
+    count_summary += f"   Number of trays sliced: {number_of_objects_sliced}\n"
 
-    if number_of_trays_generated == 0 and number_of_trays_sliced == 0:
+    if number_of_objects_generated == 0 and number_of_objects_sliced == 0:
         print("All your work is already done!")
         print(count_summary)
         sys.exit(0)
@@ -504,7 +508,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
 
-    if (not args.dryrun and number_of_trays > 0 and not args.doit):
+    if (not args.dryrun and number_of_objects > 0 and not args.doit):
         print("This is what is going to happen:")
         print(count_summary)
         confirm = input("Are you ready to do this? [Y/n]: ")
@@ -513,14 +517,14 @@ if __name__ == "__main__":
             sys.exit(0)
 
     # Record the total since running the generator will still
-    # increment the number_of_trays variable.
-    number_of_trays_total = number_of_trays_generated
+    # increment the number_of_objects variable.
+    number_of_objects_total = number_of_objects_generated
 
     # Reset these so the report properly during generation
-    number_of_trays_generated = 0
-    number_of_trays_sliced = 0
+    number_of_objects_generated = 0
+    number_of_objects_sliced = 0
 
     # Now do the real work...
-    enumerate_trays(count_only=False)
+    enumerate_objects(count_only=False)
     print("\nSummary:")
     print(count_summary)
