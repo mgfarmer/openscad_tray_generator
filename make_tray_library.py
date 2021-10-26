@@ -6,25 +6,6 @@ import argparse
 import subprocess
 import json
 
-global args
-
-# Total number of objects in the library
-global number_of_objects
-
-# Total number of objects that will be generated during the run.
-global number_of_objects_total
-
-# Count of object generated while running, for progrss reporting.
-global number_of_objects_generated
-
-# Count of object sliced while running, for progrss reporting.
-global number_of_objects_sliced
-
-
-global scale_units
-global wall_defs
-
-
 def get_oscad_command(length, width, height, params):
     global args
     global wall_defs
@@ -367,7 +348,27 @@ class LoadFromFile (argparse.Action):
             # parse arguments in the file and store them in the target namespace
             parser.parse_args(f.read().split(), namespace)
 
-if __name__ == "__main__":
+def main():
+    global args
+
+    # Total number of objects in the library
+    global number_of_objects
+
+    # Total number of objects that will be generated during the run.
+    global number_of_objects_total
+
+    # Count of object generated while running, for progrss reporting.
+    global number_of_objects_generated
+
+    # Count of object sliced while running, for progrss reporting.
+    global number_of_objects_sliced
+
+
+    global scale_units
+    global unit_name
+    global wall_defs
+    global json_presets
+
     parser = argparse.ArgumentParser(
         description='Preview, render, and slice tray variations.  This script can generate a vast library of storage trays ready to be printed.  Slicing is handled by a "slice" batch/shell script that you need to implement for your slicer (that way this script does not need to know the details on how to invoke every possible slicer).',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -579,3 +580,7 @@ if __name__ == "__main__":
     enumerate_objects(count_only=False)
     print("\nSummary:")
     print(count_summary)
+
+
+if __name__ == "__main__":
+    main()
