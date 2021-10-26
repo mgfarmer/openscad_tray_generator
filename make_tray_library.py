@@ -1,35 +1,48 @@
 import re
 import os.path
 import sys
-import shutil
 import math
 import argparse
 import subprocess
-from os import path
 
 global args
+
+# Total number of objects in the library
 global number_of_trays
-global number_of_trays_processed
+
+# Total number of objects that will be generated during the run.
 global number_of_trays_total
+
+# Count of object generated while running, for progrss reporting.
 global number_of_trays_generated
+
+# Count of object sliced while running, for progrss reporting.
 global number_of_trays_sliced
 
-global scale_units
 
+global scale_units
 global wall_defs
 
 def get_oscad_command(length, width, height, params):
     global args
     global wall_defs
+    # First, the executable...
     cmd = [args.oscad]
+
+    # Then the thickness parameters, which are computed from the unit base
     cmd += wall_defs
+
+    # Then the primary object dimensions, global to all objects
     cmd += [
         "-D", f"Scale_Units={scale_units}",
         "-D", f"Tray_Length={length}",
         "-D", f"Tray_Width={width}",
         "-D", f"Tray_Height={height}",
     ]
+
+    # And finally, the remaining parameters (specific to each object)
     cmd += params
+
     return cmd
 
 def get_slice_cmd(model):
@@ -37,6 +50,8 @@ def get_slice_cmd(model):
         return [r"slice.bat", model]
     return [r"./slice.sh", model]
 
+# Ensure floats with ".0" are converted to ints for inclusion in strings
+# So we get 5x5 instead of 5.0x5.0.
 def numstr(number):
     if number == math.floor(number):
         return int(number)
@@ -64,10 +79,9 @@ def slice(files, count_only, force_slice):
                 print(slicer.stderr)
 
 
-def generate_tray(cmd, files, count_only):
+def render_tray(cmd, files, count_only):
     global args
     global number_of_trays
-    global number_of_trays_processed
     global number_of_trays_total
     global number_of_trays_generated
 
@@ -81,34 +95,33 @@ def generate_tray(cmd, files, count_only):
 
     cmd += ["tray_generator.scad"]
 
-    number_of_trays_processed += 1
-
-    force_slice = False;
     if (args.regen or not os.path.exists(files['model'])):
         number_of_trays_generated += 1
         _filestr = " ".join(_files)
         if not count_only:
             print(
                 f"Generating: ({number_of_trays_generated} of {number_of_trays_total}):\n     {_filestr}")
-        
+
         if not args.dryrun and not count_only:
             if not os.path.exists(files['folder']):
                 os.makedirs(files['folder'])
             out = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                universal_newlines=True)
+                                 universal_newlines=True)
             #print(out.stdout)
             if (out.returncode != 0):
                 print(out.stderr)
                 return
-        force_slice = True
-            
+        return True
+    return False
+
+def generate_tray(cmd, files, count_only):
+    force_slice = render_tray(cmd, files, count_only)
     slice(files, count_only, force_slice)
             
 
 
 def create_incremental_division_variants(length, width, height, count_only):
     global args
-    global number_of_trays
 
     ldivs = math.floor(length/args.length_div_minimum_size)
     wdivs = math.floor(width/args.width_div_minimum_size)
@@ -169,7 +182,6 @@ def create_incremental_division_variants(length, width, height, count_only):
 
 def create_square_cup_tray_variations(length, width, height, count_only):
     global args
-    global number_of_trays
 
     for cup_size in args.square_cup_sizes:
         if cup_size <= length or cup_size <= width:
@@ -209,8 +221,6 @@ def create_square_cup_tray_variations(length, width, height, count_only):
 
 def create_lids(length, width, count_only):
     global args
-    global number_of_trays
-    global number_of_trays_total
 
     folder_path = f"{args.folder}/{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W"
     if (args.flat):
@@ -470,7 +480,6 @@ if __name__ == "__main__":
 
 
     number_of_trays = 0
-    number_of_trays_processed = 0
     number_of_trays_generated = 0
     number_of_trays_sliced = 0
     number_of_trays_total = 0
