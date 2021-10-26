@@ -278,6 +278,8 @@ def enumerate_trays(count_only):
 
     for length in args.lengths:
         for width in args.widths:
+            if width > length:
+                continue
             for height in args.heights:
                 create_square_cup_tray_variations(
                     length, width, height, count_only)
@@ -315,12 +317,12 @@ if __name__ == "__main__":
                     help='Tray dimensional units, options are "inch", "cm", or a numeric value. All dimensional parameters are expressed at this scale.  Fundamentally, openscad is unitless but most slicers assume that 1 unit is 1mm.  Specifying "inch" is the same as speciying "25.4", and "cm" is "10.0".  However, if you want to work in, say, Rack Units (RU), will need to specify the scale numerically as "ru=44.5"')
 
     g1.add_argument('-l', '--lengths', nargs="+", type=float,
-                    default=[4, 6],
-                    help="Specifies a list of the tray lengths to generate. Can be fractional.")
+                    default=[4, 6, 8],
+                    help="Specifies a list of the tray lengths to generate. Can be fractional.  Your longest tray should be specified in the lengths, not the width.  Tray widths greater then the length will not be generated.")
 
     g1.add_argument('-w', '--widths', nargs="+", type=float,
-                    default=[2, 4],
-                    help="Specifies a list of the tray widths to generate. Can be fractional.")
+                    default=[2, 4, 6, 8],
+                    help="Specifies a list of the tray widths to generate. Can be fractional.  Tray widths greater than the length will not be generated.")
 
     g1.add_argument('-t', '--heights', type=float,
                     nargs="+", default=[0.75, 1.0, 1.5, 2.0],
@@ -437,7 +439,7 @@ if __name__ == "__main__":
         "-D", f"Tray_Wall_Thickness={wall_t:.3f}",
         "-D", f"Floor_Thickness={floor_t:.3f}",
         "-D", f"Divider_Wall_Thickness={div_t:.3f}",
-        "-D", f"Corner_Roundness=0.5",
+        "-D", f"Corner_Roundness=1.0",
         "-D", f"Interlock_Height={intr_h:.3f}",
         "-D", f"Interlock_Gap={intr_g:.3f}"
     ]
