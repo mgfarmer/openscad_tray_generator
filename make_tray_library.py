@@ -4,6 +4,7 @@ import sys
 import math
 import argparse
 import subprocess
+import json
 
 global args
 
@@ -23,6 +24,7 @@ global number_of_objects_sliced
 global scale_units
 global wall_defs
 
+
 def get_oscad_command(length, width, height, params):
     global args
     global wall_defs
@@ -32,13 +34,17 @@ def get_oscad_command(length, width, height, params):
     # Then the thickness parameters, which are computed from the unit base
     cmd += wall_defs
 
+    cmd += ["-D", f"Scale_Units={scale_units}"]
+
     # Then the primary object dimensions, global to all objects
-    cmd += [
-        "-D", f"Scale_Units={scale_units}",
-        "-D", f"Tray_Length={length}",
-        "-D", f"Tray_Width={width}",
-        "-D", f"Tray_Height={height}",
-    ]
+    if (length is not None):
+        cmd += ["-D", f"Tray_Length={length}"]
+
+    if (width is not None):
+        cmd += ["-D", f"Tray_Width={width}"]
+
+    if (height is not None):
+        cmd += ["-D", f"Tray_Height={height}"]
 
     # And finally, the remaining parameters (specific to each object)
     cmd += params
@@ -89,8 +95,10 @@ def render_object(cmd, files, count_only):
         number_of_objects += 1
 
     _files = [files['png']]
+
+    cmd += ['-o', files['png']]
     if (not args.preview_only):
-        cmd += ["-o", files['model']]
+        cmd += ['-o', files['model']]
         _files += [files['model']]
 
     cmd += ["tray_generator.scad"]
@@ -174,7 +182,6 @@ def create_incremental_division_variants(length, width, height, count_only):
                                         "-D", "Build_Mode=\"Length_Width_Cups\"",
                                         "-D", f"Cup_Along_Length={ldiv}",
                                         "-D", f"Cups_Across_Width={wdiv}",
-                                        "-o", files['png'],
                                     ])
 
             generate_object(cmd, files, count_only)
@@ -213,10 +220,35 @@ def create_square_cup_tray_variations(length, width, height, count_only):
                                         [
                                             "-D", "Build_Mode=\"Square_Cups\"",
                                             "-D", f"Square_Cup_Size={cup_size}",
-                                            "-o", files['png']
                                         ])
 
                 generate_object(cmd, files, count_only)
+
+
+def create_json_presets(count_only):
+    global args
+    global json_presets
+
+    for i in json_presets['parameterSets']:
+        folder_path = f"{args.output_folder}/presets"
+        if (args.flat):
+            folder_path = f"{args.output_folder}"
+
+        # Recessed Lid
+        file_base = f"{folder_path}/{i}"
+        files = {
+            "folder": folder_path,
+            "base": file_base,
+            "png": f"{file_base}.png",
+            "model": f"{file_base}.{args.export_model_as}",
+            "gcode": f"{file_base}.gcode"
+        }
+        cmd = get_oscad_command(None, None, None,
+                                [
+                                    '-p', f"{args.json}",
+                                    '-P', i
+                                ])
+        generate_object(cmd, files, count_only)
 
 
 def create_lids(length, width, count_only):
@@ -235,11 +267,10 @@ def create_lids(length, width, count_only):
         "model": f"{file_base}.{args.export_model_as}",
         "gcode": f"{file_base}.gcode"
     }
-    cmd = get_oscad_command(length, width, 0.0,
+    cmd = get_oscad_command(length, width, None,
                             [
                                 "-D", "Build_Mode=\"Tray_Lid\"",
                                 "-D", f"Lid_Thickness=0",
-                                "-o", files['png'],
                             ])
     generate_object(cmd, files, count_only)
 
@@ -256,7 +287,6 @@ def create_lids(length, width, count_only):
                             [
                                 "-D", "Build_Mode=\"Tray_Lid\"",
                                 "-D", f"Lid_Style=\"Finger_Holes\"",
-                                "-o", files['png'],
                             ])
     generate_object(cmd, files, count_only)
 
@@ -274,7 +304,6 @@ def create_lids(length, width, count_only):
                                 "-D", "Build_Mode=\"Tray_Lid\"",
                                 "-D", f"Lid_Style=\"Finger_Holes\"",
                                 "-D", f"Interlocking_Lid=true",
-                                "-o", files['png'],
                             ])
     generate_object(cmd, files, count_only)
 
@@ -292,7 +321,6 @@ def create_lids(length, width, count_only):
                             [
                                 "-D", "Build_Mode=\"Tray_Lid\"",
                                 "-D", f"Lid_Style=\"Bar_Handle\"",
-                                "-o", files['png'],
                             ])
     generate_object(cmd, files, count_only)
 
@@ -311,6 +339,7 @@ def enumerate_objects(count_only):
                 create_incremental_division_variants(
                     length, width, height, count_only)
             create_lids(length, width, count_only)
+    create_json_presets(count_only)
 
 
 def isfloat(value):
@@ -331,12 +360,22 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
+# https://stackoverflow.com/a/27434050/45206
+class LoadFromFile (argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        with values as f:
+            # parse arguments in the file and store them in the target namespace
+            parser.parse_args(f.read().split(), namespace)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Preview, render, and slice tray variations.  This script can generate a vast library of storage trays ready to be printed.  Slicing is handled by a "slice" batch/shell script that you need to implement for your slicer (that way this script does not need to know the details on how to invoke every possible slicer).',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    g1 = parser.add_argument_group('Tray Sizes')
+    parser.add_argument('--arg_file', type=open, action=LoadFromFile,
+                    help="Specify a file that contains all the command line parameter, and use them instead.")
+
+    g1 = parser.add_argument_group('Tray Parameters')
 
     g1.add_argument('-u', '--units', type=str, default="inch",
                     help='Tray dimensional units, options are "inch", "cm", or a numeric value. All dimensional parameters are expressed at this scale.  Fundamentally, openscad is unitless but most slicers assume that 1 unit is 1mm.  Specifying "inch" is the same as speciying "25.4", and "cm" is "10.0".  However, if you want to work in, say, Rack Units (RU), will need to specify the scale numerically as "ru=44.5"')
@@ -353,7 +392,14 @@ if __name__ == "__main__":
                     nargs="+", default=[0.75, 1.0, 1.5, 2.0],
                     help="Specifies a list of all the tray heights to generate. Can be fractional.")
 
+    g1.add_argument('--json', type=str, default="",
+                    help="Load custom tray definitions from this OpenSCAD preset file.  All presets will be generated unless (see --preset)")
+
+    g1.add_argument('--preset', type=str, nargs="+", default=[],
+                    help="Generate only specified preset from the specified json preset file (see --json)")
+
     g0 = parser.add_argument_group('Generation Control Options')
+
     g0.add_argument('--oscad', type=str, default=r"openscad",
                         help="The openscad executable.  The default value assumes it is in your path.  Otherwise specify the full path to the executable.")
 
@@ -424,6 +470,11 @@ if __name__ == "__main__":
     if not args.count_only and args.output_folder == "":
         print("You need to specify an output folder (-o <folder>) so I know where to put everything.")
         sys.exit(0)
+
+    json_presets = None
+    if (args.json != ""):
+        f = open(args.json)
+        json_presets = json.load(f)
 
     pattern = re.compile('(\w+)=(.*)')
 
