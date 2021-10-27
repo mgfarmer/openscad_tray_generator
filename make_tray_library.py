@@ -106,6 +106,7 @@ def render_object(cmd, files, count_only):
             print(f"Generating: ({number_of_objects_generated} of {number_of_objects_total}):")
             print(f"     Rendering: {_filestr}")
 
+        print(cmd)
         if not args.dryrun and not count_only:
             if not os.path.exists(files['folder']):
                 os.makedirs(files['folder'])
@@ -182,15 +183,9 @@ def create_square_cup_tray_variations(length, width, height, count_only):
                 lcups = math.floor(length / cup_size)
                 wcups = math.floor(width / cup_size)
 
-                ht = height
-
-                if (math.floor(height) == height):
-                    # Don't use a .0 decimal for integer heights in file names
-                    ht = math.floor(height)
-
                 folder_path = get_output_folder(
-                    f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(ht)}-{unit_name}-H")
-                file_base = f"{folder_path}/tray_{numstr(length)}x{numstr(width)}x{numstr(ht)}_{lcups}x{wcups}_cups"
+                    f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
+                file_base = f"{folder_path}/tray_{numstr(length)}x{numstr(width)}x{numstr(height)}_{lcups}x{wcups}_cups"
                 files = make_files_dict(folder_path, file_base)
 
                 cmd = get_oscad_command(length, width, height,
@@ -222,6 +217,51 @@ def create_json_presets(count_only):
                                 [
                                     '-p', f"{args.json}",
                                     '-P', i
+                                ])
+        generate_object(cmd, files, count_only)
+
+
+def create_json_customs(length, width, height, count_only):
+    global args
+    global json_customs
+
+    if json_customs is None:
+        return
+
+    for i in json_customs['customColRows']:
+        if args.json_custom_defs is not None:
+            if not i in args.json_custom_defs:
+                continue
+
+        expression = json_customs['customColRows'][i]['Custom_Col_Row_Ratios']
+        #exp = re.sub("\s+", '', expression)# .translate(str.maketrans('', '', ' \n\t\r'))
+        folder_path = get_output_folder(
+            f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
+        file_base = f"{folder_path}/tray_{i}_{numstr(length)}x{numstr(width)}x{numstr(height)}"
+        files = make_files_dict(folder_path, file_base)
+
+        cmd = get_oscad_command(length, width, height,
+                                [
+                                    '-D', 'Build_Mode=\"Custom_Divisions_per_Column_or_Row\"',
+                                    '-D', f"Custom_Col_Row_Ratios={expression}",
+                                ])
+        generate_object(cmd, files, count_only)
+
+    for i in json_customs['customDivisions']:
+        if args.json_custom_defs is not None:
+            if not i in args.json_custom_defs:
+                continue
+
+        expression = json_customs['customDivisions'][i]['Custom_Division_List']
+        folder_path = get_output_folder(
+            f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
+        file_base = f"{folder_path}/tray_{i}_{numstr(length)}x{numstr(width)}x{numstr(height)}"
+        files = make_files_dict(folder_path, file_base)
+
+        cmd = get_oscad_command(length, width, height,
+                                [
+                                    '-D', 'Build_Mode=\"Custom_Ratio_Divisions\"',
+                                    '-D', f"Custom_Division_List={expression}",
                                 ])
         generate_object(cmd, files, count_only)
 
@@ -286,6 +326,7 @@ def enumerate_objects(count_only):
                     length, width, height, count_only)
                 create_incremental_division_variants(
                     length, width, height, count_only)
+                create_json_customs(length, width, height, count_only)
             create_lids(length, width, count_only)
     create_json_presets(count_only)
 
@@ -348,9 +389,12 @@ def make_args():
     g1.add_argument('--presets', type=str, nargs="+", default=[],
                     help="Generate only specified preset(s) from the specified json preset file (see --json)")
 
-    g1.add_argument('--json-divs', type=str, 
-                    help="Specify a json file containing custom division expressions")
+    g1.add_argument('--json_custom', type=str, 
+                    help="Specify a json file containing custom layout expressions. All layouts will be generated unless (see --json_custom_defs)")
 
+    g1.add_argument('--json_custom_defs', type=str, nargs="+",
+                    help="Generate only specified preset(s) from the specified json_custom file (see --json_custom)")
+    
     g0 = parser.add_argument_group('Generation Control Options')
 
     g0.add_argument('--oscad', type=str, nargs="+", default=r"openscad",
@@ -435,6 +479,7 @@ def main():
     global unit_name
     global wall_defs
     global json_presets
+    global json_customs
 
     make_args()
 
@@ -450,6 +495,10 @@ def main():
         f = open(args.json)
         json_presets = json.load(f)
 
+    json_customs = None
+    if args.json_custom is not None:
+        f = open(args.json_custom)
+        json_customs = json.load(f)
 
     scale_units = 25.4
     unit_name="in"

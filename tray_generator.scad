@@ -36,7 +36,7 @@ Widthwise_Cup_Ratios = [1,1,1,1,1];
 
 /* [Custom Divisions per Column or Row] */
 // It is strongly advised that you build this expression in a real text editor, then paste it here.
-Custom_Col_Row_Ratios = [ "|", 3, 1, 2, 1, "-", 3, 1, 1, 1, "-", 2, 1, 2, "-", 1];
+Custom_Col_Row_Ratios = [1,5,2,2,2,1.5,2,0,3,0,3,0,3,0,2,0,5];
 
 // M2-M3: ["|", 5, 2.5, 2, 3, 3, 3, "*", 3, "*", 3, "*", 3, "*", 2, "*", 5]
 // M4:    ["|", 5, 2.5, 2, 3, 3, 3, "*", 4, "*", 4, "*", 3, "*", 2, "*", 5]
@@ -237,10 +237,10 @@ module make_w_div(pos, from=0, to=1.0, hscale=1.0) {
 }
 
 module make_div(dir, pos, from=0, to=1.0, hscale=1.0) {
-    if (dir == "-" || dir == "length") {
+    if (dir == 0 || dir == "-" || dir == "length") {
         make_l_div(pos, from, to, hscale);
     }
-    if (dir == "|" || dir == "width") {
+    if (dir == 1 || dir == "|" || dir == "width") {
         make_w_div(pos, from, to, hscale);
     }
 }
@@ -400,21 +400,22 @@ if (Build_Mode == "Length_Width_Cup_Ratios") {
 }
 
 module make_walls(section, mode, walls, divisions) {
+    echo(section, mode, walls)
     if (section < len(divisions)-1) {
         from = divisions[section];
         to = divisions[section+1];
-        if (is_num(walls[2])) {
-            ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) walls[1+i] ]);
-            make_cups(ratios, mode, from, to);
-            wall_specs = sub_vect(walls, 2 + walls[1]); 
-            make_walls(section+1, mode, wall_specs, divisions);
-        }
-        else {
-            ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) 1 ]);
-            make_cups(ratios, mode, from, to);
-            wall_specs = sub_vect(walls, 2); 
-            make_walls(section+1, mode, wall_specs, divisions);
-        }
+            if (len(walls) > 2 && walls[2] > 0) {
+                ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) walls[1+i] ]);
+                make_cups(ratios, mode, from, to);
+                wall_specs = sub_vect(walls, 2 + walls[1]); 
+                make_walls(section+1, mode, wall_specs, divisions);
+            }
+            else {
+                ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) 1 ]);
+                make_cups(ratios, mode, from, to);
+                wall_specs = sub_vect(walls, 2); 
+                make_walls(section+1, mode, wall_specs, divisions);
+            }
     }
 }
 
@@ -423,9 +424,9 @@ if (Build_Mode == "Custom_Divisions_per_Column_or_Row") {
     union() {
         make_tray();
         mode = Custom_Col_Row_Ratios[0];
-        other_mode = (mode == "|")?"-":"|";
+        other_mode = (mode == 1)?0:1;
         divs = Custom_Col_Row_Ratios[1];
-        if (is_num(Custom_Col_Row_Ratios[2])) {
+        if (Custom_Col_Row_Ratios[2] > 0) {
             ratios = rev_vect([ for( i = [0 : 1 : divs-1]) Custom_Col_Row_Ratios[2+i] ]);
             make_cups(ratios, mode);
             divisions = concat( [0.0], make_normalized_divs(ratios), [1.0]);
