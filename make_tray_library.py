@@ -32,6 +32,22 @@ def get_oscad_command(length, width, height, params):
 
     return cmd
 
+def make_files_dict(folder_path, file_base):
+    files = {
+        "folder": folder_path,
+        "base": file_base,
+        "png": f"{file_base}.png",
+        "model": f"{file_base}.{args.export_model_as}",
+        "gcode": f"{file_base}.gcode"
+    }
+    return files
+
+def get_output_folder(subfolder):
+    if (args.flat):
+        return f"{args.output_folder}"
+
+    return f"{args.output_folder}/{subfolder}"
+
 def get_slice_cmd(model):
     if sys.platform.startswith('win32'):
         return [r"slice.bat", model]
@@ -64,7 +80,6 @@ def slice(files, count_only, force_slice):
             print(slicer.stdout)
             if (slicer.returncode):
                 print(slicer.stderr)
-
 
 def render_object(cmd, files, count_only):
     global args
@@ -106,8 +121,6 @@ def render_object(cmd, files, count_only):
 def generate_object(cmd, files, count_only):
     force_slice = render_object(cmd, files, count_only)
     slice(files, count_only, force_slice)
-            
-
 
 def create_incremental_division_variants(length, width, height, count_only):
     global args
@@ -145,18 +158,10 @@ def create_incremental_division_variants(length, width, height, count_only):
                 # Don't use a .0 decimal for integer heights in file names
                 ht = math.floor(height)
 
-            folder_path = f"{args.output_folder}/{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{ht}-{unit_name}-H"
-            if (args.flat):
-                folder_path = f"{args.output_folder}"
-
+            folder_path = get_output_folder(
+                f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{ht}-{unit_name}-H")
             file_base = f"{folder_path}/tray_{numstr(length)}x{numstr(width)}x{numstr(ht)}_{ldiv}x{wdiv}_cups"
-            files = {
-                "folder": folder_path,
-                "base": file_base,
-                "png": f"{file_base}.png",
-                "model": f"{file_base}.{args.export_model_as}",
-                "gcode": f"{file_base}.gcode"
-            }
+            files = make_files_dict(folder_path, file_base)
 
             cmd = get_oscad_command(length, width, height,
                                     [
@@ -166,7 +171,6 @@ def create_incremental_division_variants(length, width, height, count_only):
                                     ])
 
             generate_object(cmd, files, count_only)
-
 
 def create_square_cup_tray_variations(length, width, height, count_only):
     global args
@@ -184,18 +188,10 @@ def create_square_cup_tray_variations(length, width, height, count_only):
                     # Don't use a .0 decimal for integer heights in file names
                     ht = math.floor(height)
 
-                folder_path = f"{args.output_folder}/{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(ht)}-{unit_name}-H"
-                if (args.flat):
-                    folder_path = f"{args.output_folder}"
-
+                folder_path = get_output_folder(
+                    f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(ht)}-{unit_name}-H")
                 file_base = f"{folder_path}/tray_{numstr(length)}x{numstr(width)}x{numstr(ht)}_{lcups}x{wcups}_cups"
-                files = {
-                    "folder": folder_path,
-                    "base": file_base,
-                    "png": f"{file_base}.png",
-                    "model": f"{file_base}.{args.export_model_as}",
-                    "gcode": f"{file_base}.gcode"
-                }
+                files = make_files_dict(folder_path, file_base)
 
                 cmd = get_oscad_command(length, width, height,
                                         [
@@ -205,25 +201,23 @@ def create_square_cup_tray_variations(length, width, height, count_only):
 
                 generate_object(cmd, files, count_only)
 
-
 def create_json_presets(count_only):
     global args
     global json_presets
 
+    if json_presets is None:
+        return
+
     for i in json_presets['parameterSets']:
-        folder_path = f"{args.output_folder}/presets"
-        if (args.flat):
-            folder_path = f"{args.output_folder}"
+        if args.presets is not None:
+            if not i in args.presets:
+                continue
+
+        folder_path = get_output_folder("presets")
 
         # Recessed Lid
         file_base = f"{folder_path}/{i}"
-        files = {
-            "folder": folder_path,
-            "base": file_base,
-            "png": f"{file_base}.png",
-            "model": f"{file_base}.{args.export_model_as}",
-            "gcode": f"{file_base}.gcode"
-        }
+        files = make_files_dict(folder_path, file_base)
         cmd = get_oscad_command(None, None, None,
                                 [
                                     '-p', f"{args.json}",
@@ -231,23 +225,16 @@ def create_json_presets(count_only):
                                 ])
         generate_object(cmd, files, count_only)
 
-
 def create_lids(length, width, count_only):
     global args
 
-    folder_path = f"{args.output_folder}/{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W"
-    if (args.flat):
-        folder_path = f"{args.output_folder}"
+    folder_path = get_output_folder(
+        f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W")
 
     # Recessed Lid
     file_base = f"{folder_path}/tray_lid_recessed_{numstr(length)}x{numstr(width)}"
-    files = {
-        "folder": folder_path,
-        "base": file_base,
-        "png": f"{file_base}.png",
-        "model": f"{file_base}.{args.export_model_as}",
-        "gcode": f"{file_base}.gcode"
-    }
+
+    files = make_files_dict(folder_path, file_base)
     cmd = get_oscad_command(length, width, None,
                             [
                                 "-D", "Build_Mode=\"Tray_Lid\"",
@@ -257,13 +244,7 @@ def create_lids(length, width, count_only):
 
     # Non Recessed Lid
     file_base = f"{folder_path}/tray_lid_finger_{numstr(length)}x{numstr(width)}"
-    files = {
-        "folder": folder_path,
-        "base": file_base,
-        "png": f"{file_base}.png",
-        "model": f"{file_base}.{args.export_model_as}",
-        "gcode": f"{file_base}.gcode"
-    }
+    files = make_files_dict(folder_path, file_base)
     cmd = get_oscad_command(length, width, 0.0,
                             [
                                 "-D", "Build_Mode=\"Tray_Lid\"",
@@ -273,13 +254,7 @@ def create_lids(length, width, count_only):
 
     # Interlocking Lid
     file_base = f"{folder_path}/tray_lid_interlocking_finger_{numstr(length)}x{numstr(width)}"
-    files = {
-        "folder": folder_path,
-        "base": file_base,
-        "png": f"{file_base}.png",
-        "model": f"{file_base}.{args.export_model_as}",
-        "gcode": f"{file_base}.gcode"
-    }
+    files = make_files_dict(folder_path, file_base)
     cmd = get_oscad_command(length, width, 0.0,
                             [
                                 "-D", "Build_Mode=\"Tray_Lid\"",
@@ -288,23 +263,15 @@ def create_lids(length, width, count_only):
                             ])
     generate_object(cmd, files, count_only)
 
-
     # Bar Handle Lid
     file_base = f"{folder_path}/tray_lid_handle_{numstr(length)}x{numstr(width)}"
-    files = {
-        "folder": folder_path,
-        "base": file_base,
-        "png": f"{file_base}.png",
-        "model": f"{file_base}.{args.export_model_as}",
-        "gcode": f"{file_base}.gcode"
-    }
+    files = make_files_dict(folder_path, file_base)
     cmd = get_oscad_command(length, width, 0.0,
                             [
                                 "-D", "Build_Mode=\"Tray_Lid\"",
                                 "-D", f"Lid_Style=\"Bar_Handle\"",
                             ])
     generate_object(cmd, files, count_only)
-
 
 def enumerate_objects(count_only):
     global args
@@ -321,7 +288,6 @@ def enumerate_objects(count_only):
                     length, width, height, count_only)
             create_lids(length, width, count_only)
     create_json_presets(count_only)
-
 
 def isfloat(value):
   try:
@@ -348,30 +314,13 @@ class LoadFromFile (argparse.Action):
             # parse arguments in the file and store them in the target namespace
             parser.parse_args(f.read().split(), namespace)
 
-def main():
+def make_args():
+    global parser
     global args
 
-    # Total number of objects in the library
-    global number_of_objects
-
-    # Total number of objects that will be generated during the run.
-    global number_of_objects_total
-
-    # Count of object generated while running, for progrss reporting.
-    global number_of_objects_generated
-
-    # Count of object sliced while running, for progrss reporting.
-    global number_of_objects_sliced
-
-
-    global scale_units
-    global unit_name
-    global wall_defs
-    global json_presets
-
     parser = argparse.ArgumentParser(
-        description='Preview, render, and slice tray variations.  This script can generate a vast library of storage trays ready to be printed.  Slicing is handled by a "slice" batch/shell script that you need to implement for your slicer (that way this script does not need to know the details on how to invoke every possible slicer).',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    description='Preview, render, and slice tray variations.  This script can generate a vast library of storage trays ready to be printed.  Slicing is handled by a "slice" batch/shell script that you need to implement for your slicer (that way this script does not need to know the details on how to invoke every possible slicer).',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('--arg_file', type=open, action=LoadFromFile,
                     help="Specify a file that contains all the command line parameter, and use them instead.")
@@ -396,12 +345,15 @@ def main():
     g1.add_argument('--json', type=str, default="",
                     help="Load custom tray definitions from this OpenSCAD preset file.  All presets will be generated unless (see --preset)")
 
-    g1.add_argument('--preset', type=str, nargs="+", default=[],
-                    help="Generate only specified preset from the specified json preset file (see --json)")
+    g1.add_argument('--presets', type=str, nargs="+", default=[],
+                    help="Generate only specified preset(s) from the specified json preset file (see --json)")
+
+    g1.add_argument('--json-divs', type=str, 
+                    help="Specify a json file containing custom division expressions")
 
     g0 = parser.add_argument_group('Generation Control Options')
 
-    g0.add_argument('--oscad', type=str, default=r"openscad",
+    g0.add_argument('--oscad', type=str, nargs="+", default=r"openscad",
                         help="The openscad executable.  The default value assumes it is in your path.  Otherwise specify the full path to the executable.")
 
     g0.add_argument('-o', '--output_folder', type=str, default=r"",
@@ -462,8 +414,29 @@ def main():
     g3.add_argument('--interlock_dimensions', nargs="+", type=float,
                     help="interlocking dimensions")
 
-
     args = parser.parse_args()
+
+def main():
+    global args
+
+    # Total number of objects in the library
+    global number_of_objects
+
+    # Total number of objects that will be generated during the run.
+    global number_of_objects_total
+
+    # Count of object generated while running, for progrss reporting.
+    global number_of_objects_generated
+
+    # Count of object sliced while running, for progrss reporting.
+    global number_of_objects_sliced
+
+    global scale_units
+    global unit_name
+    global wall_defs
+    global json_presets
+
+    make_args()
 
     if args.count_only:
         args.dryrun = True
@@ -477,7 +450,6 @@ def main():
         f = open(args.json)
         json_presets = json.load(f)
 
-    pattern = re.compile('(\w+)=(.*)')
 
     scale_units = 25.4
     unit_name="in"
@@ -492,6 +464,8 @@ def main():
         unit_name = "flibits"
         scale_units = float(args.units)
 
+    # pattern for matching "<unit_name>=<scale-factor>"
+    pattern = re.compile('(\w+)=(.*)')
     m = pattern.match(args.units)
     if m:
         unit_name = m.group(1)
@@ -534,31 +508,29 @@ def main():
         "-D", f"Interlock_Gap={intr_g:.3f}"
     ]
 
-
     number_of_objects = 0
     number_of_objects_generated = 0
     number_of_objects_sliced = 0
     number_of_objects_total = 0
 
-
     # First rip through the generator and just count the number
     # of elements that will be generated.
     enumerate_objects(count_only=True)
 
-    count_summary =  f"   Number of trays in the library {number_of_objects}\n"
-    count_summary += f"   Number of trays generated: {number_of_objects_generated}\n"
-    count_summary += f"   Number of trays sliced: {number_of_objects_sliced}\n"
-
-    if number_of_objects_generated == 0 and number_of_objects_sliced == 0:
-        print("All your work is already done!")
-        print(count_summary)
-        sys.exit(0)
+    count_summary =  f"Number of trays declared: {number_of_objects}\n"
+    count_summary += f"Number of trays to be generated: {number_of_objects_generated}\n"
+    count_summary += f"Number of trays to be sliced: {number_of_objects_sliced}\n"
 
     if args.count_only:
         print("Count Only:")
         print(count_summary)
         sys.exit(0)
 
+    if number_of_objects_generated == 0 and number_of_objects_sliced == 0:
+        print("All your work is already done!")
+        print("Use --regen and/or --reslice if you need to.")
+        print(count_summary)
+        sys.exit(0)
 
     if (not args.dryrun and number_of_objects > 0 and not args.doit):
         print("This is what is going to happen:")
@@ -578,9 +550,16 @@ def main():
 
     # Now do the real work...
     enumerate_objects(count_only=False)
+
+    # Finally, recount everything to report accurate results
+    enumerate_objects(count_only=True)
+
+    count_summary = f"   Number of trays declared: {number_of_objects}\n"
+    count_summary += f"   Number of trays generated: {number_of_objects_generated}\n"
+    count_summary += f"   Number of trays sliced: {number_of_objects_sliced}\n"
+
     print("\nSummary:")
     print(count_summary)
-
 
 if __name__ == "__main__":
     main()
