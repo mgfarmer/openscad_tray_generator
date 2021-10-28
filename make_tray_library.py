@@ -125,7 +125,7 @@ def render_object(cmd, files, count_only):
             if (out.returncode != 0):
                 print(out.stderr)
                 return
-        return True
+        return args.slice
     return False
 
 issued_cmds = []
@@ -198,7 +198,13 @@ def create_incremental_division_variants(length, width, height, count_only):
 def create_square_cup_tray_variations(length, width, height, count_only):
     global args
 
-    for cup_size in args.square_cup_sizes:
+    cup_sizes = None
+    if not args.square_cup_sizes:
+        cup_sizes = range(1,int(max(max_length,max_width)))
+    else:
+        cup_sizes = args.square_cup_sizes
+
+    for cup_size in cup_sizes:
         if cup_size <= length or cup_size <= width:
             if length % cup_size == 0 and width % cup_size == 0:
 
@@ -217,6 +223,23 @@ def create_square_cup_tray_variations(length, width, height, count_only):
                                         ])
 
                 generate_object(cmd, files, count_only)
+
+
+def create_simple_tray(length, width, height, count_only):
+    global args
+
+    folder_path = get_output_folder(
+        f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
+    file_base = f"{folder_path}/tray_{get_lw_str(length,width,height)}"
+    files = make_files_dict(folder_path, file_base)
+
+    cmd = get_oscad_command(length, width, height,
+                            [
+                                "-D", "Build_Mode=\"Just_the_Tray\"",
+                            ])
+
+    generate_object(cmd, files, count_only)
+
 
 def create_json_presets(count_only):
     global args
@@ -325,30 +348,94 @@ def create_lids(length, width, count_only):
     generate_object(cmd, files, count_only)
 
     # Bar Handle Lid
-    file_base = f"{folder_path}/tray_lid_handle_{get_lw_str(length,width)}"
-    files = make_files_dict(folder_path, file_base)
-    cmd = get_oscad_command(length, width, 0.0,
-                            [
-                                "-D", "Build_Mode=\"Tray_Lid\"",
-                                "-D", f"Lid_Style=\"Bar_Handle\"",
-                            ])
-    generate_object(cmd, files, count_only)
+    # file_base = f"{folder_path}/tray_lid_handle_{get_lw_str(length,width)}"
+    # files = make_files_dict(folder_path, file_base)
+    # cmd = get_oscad_command(length, width, 0.0,
+    #                         [
+    #                             "-D", "Build_Mode=\"Tray_Lid\"",
+    #                             "-D", f"Lid_Style=\"Bar_Handle\"",
+    #                         ])
+    # generate_object(cmd, files, count_only)
+
+def enumerate_tray_sizes():
+    global max_length
+    global max_width
+
+    max_length = 0;
+    max_width = 0;
+
+    if args.dimensions:
+        sizes = []
+        for elem in args.dimensions:
+            lxw = elem.split('x')
+            if len(lxw) < 2:
+                print("Invalid dimension specified for --dimensions. Need LxW or LxWxH, got", elem)
+            
+            length = float(lxw[0])
+            width = float(lxw[1])
+
+            max_length = max(max_length, length)
+            max_width = max(max_width, width)
+
+            if len(lxw) == 2:
+                if not args.heights:
+                    print("When using --dimensions with LxW expressions, you must also provide heights using --heights, or use LxWxH expressions")
+                    sys.exit(1)
+                for height in args.heights:
+                    sizes += [[length, width, height]]
+
+            if len(lxw) == 3:
+                sizes += [[length, width, float(lxw[2])]]
+
+        # TODO: What if we fall thru here? Is that a valid and useful case
+        return sizes
+
+    else:
+        sizes = []
+        for length in args.lengths:
+            for width in args.widths:
+
+                max_length = math.max(max_length, length)
+                max_width = math.max(max_width, width)
+
+                if width > length:
+                    # This prevents duplicate trays
+                    continue
+                for height in args.heights:
+                    sizes += [[length, width, height]]
+        return sizes
 
 def enumerate_objects(count_only):
     global args
 
-    for length in args.lengths:
-        for width in args.widths:
-            if width > length:
-                # This prevents duplicate trays
-                continue
-            for height in args.heights:
+    sizes = enumerate_tray_sizes()
+
+    print(sizes)
+
+    handled_lids = []
+    for s in sizes:
+        length = s[0]
+        width = s[1]
+        height = s[2]
+        if args.auto_squares or args.auto_divisions:
+            if (args.auto_squares):
                 create_square_cup_tray_variations(
                     length, width, height, count_only)
+
+            if (args.auto_divisions):
                 create_incremental_division_variants(
                     length, width, height, count_only)
-                create_json_customs(length, width, height, count_only)
-            create_lids(length, width, count_only)
+
+        else:
+            create_simple_tray(length, width, height, count_only)
+
+        create_json_customs(length, width, height, count_only)
+
+        if (args.auto_lids):
+            if not [length,width] in handled_lids:
+                create_lids(length, width, count_only)
+                handled_lids += [length,width]
+
     create_json_presets(count_only)
 
 def isfloat(value):
@@ -401,8 +488,11 @@ def make_args():
                     help="Specifies a list of the tray widths to generate. Can be fractional.  Tray widths greater than the length will not be generated.")
 
     g1.add_argument('-t', '--heights', type=float,
-                    nargs="+", default=[0.75, 1.0, 1.5, 2.0],
+                    nargs="+", default=[],
                     help="Specifies a list of all the tray heights to generate. Can be fractional.")
+
+    g1.add_argument('-x', '--dimensions', type=str, nargs="+", default=[],
+                    help='Specify a fixed list of dimensions to create as a list of "LxW" string or "LxWxH" strings (but not both). If the H term is not provided then heights specific by --heights will be used.')
 
     g1.add_argument('--json', type=str, default="",
                     help="Load custom tray definitions from this OpenSCAD preset file.  All presets will be generated unless (see --preset)")
@@ -451,11 +541,26 @@ def make_args():
     g0.add_argument('--reslice', type=str2bool, nargs="?", default=False, const=True,
                     help="Reslice the model file to gcode even if it already exits.  Normally gcode files are not resliced if they exist.  Use this option for force reslicing.  This is useful it you changed a slicing profile and need to reslice everything.")
 
+    g0.add_argument('--auto_lids', type=str2bool, nargs="?", default=False, const=True,
+                    help="Automatically generate lids to fit generated tray sizes")
+
+
     g2 = parser.add_argument_group('Tray Divisions',
                                    "Options in this section control how divisions (or cups) are created in the tray.")
 
-    g2.add_argument('--square_cup_sizes', nargs="+", type=float, default=[1, 2, 3, 4, 5, 6, 8],
-                    help='Square cup sizes to create for each tray. This is a list of square sizes that will be created for each tray.  This is only done when when the cup size is a integer multiple of both the length and width of the tray being created. For example, a 6x4 tray will not generate square cups of size 3 because 4/3 is not an integer. Specify an empty list to skip generating square cups (though some may still be created from the "divions" parameters below.  Can be fractional.')
+    g2.add_argument('--auto_squares', type=str2bool, nargs="?", default=False, const=True,
+                    help="Automatically generate cup divisions for square cups");
+
+    g2.add_argument('--square_cup_sizes', nargs="+", type=float, default=[],
+                    help='Square cup sizes to create for each tray. This is a list of square sizes that will be created for \
+                            each tray.  This is only done when when the cup size is a integer multiple of both the length and \
+                            width of the tray being created. For example, a 6x4 tray will not generate square cups of size 3 because \
+                            4/3 is not an integer. Specify an empty list to skip generating square cups (though some may still be \
+                            created from the "divions" parameters below.  Can be fractional.  If not provided then all unit sizes will \
+                            be created.  Requires --auto_squares')
+
+    g2.add_argument('--auto_divisions', type=str2bool, nargs="?", default=False, const=True,
+                    help="Automatically generate divisions unit incremental  length/width cups")
 
     g2.add_argument("--length_div_minimum_size", type=float,
                     default=1.0,
@@ -593,9 +698,9 @@ def main():
     # of elements that will be generated.
     enumerate_objects(count_only=True)
 
-    count_summary =  f"Number of trays declared: {number_of_objects}\n"
-    count_summary += f"Number of trays to be generated: {number_of_objects_generated}\n"
-    count_summary += f"Number of trays to be sliced: {number_of_objects_sliced}\n"
+    count_summary =  f"Number of objects declared:         {number_of_objects}\n"
+    count_summary += f"Number of objects to be gen/sliced: {number_of_objects_generated}, {number_of_objects_sliced}\n"
+    count_summary += f"Number of objects existing:         {number_of_objects-number_of_objects_generated}\n"
 
     if args.count_only:
         print("Count Only:")
@@ -635,9 +740,9 @@ def main():
     # Finally, recount everything to report accurate results
     enumerate_objects(count_only=True)
 
-    count_summary = f"   Number of trays declared: {number_of_objects}\n"
-    count_summary += f"   Number of trays generated: {number_of_objects_generated}\n"
-    count_summary += f"   Number of trays sliced: {number_of_objects_sliced}\n"
+    count_summary = f"Number of objects declared:         {number_of_objects}\n"
+    count_summary += f"Number of objects to be gen/sliced: {number_of_objects_generated}, {number_of_objects_sliced}\n"
+    count_summary += f"Number of objects existing:         {number_of_objects-number_of_objects_generated}\n"
 
     print("\nSummary:")
     print(count_summary)
