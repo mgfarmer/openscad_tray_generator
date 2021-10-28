@@ -10,7 +10,7 @@ Tray_Width = 2.0; // [1.0:1.0:10]
 // Specifies the tray height in the select unit scale
 Tray_Height = 1.0; // [0.0:0.25:8]
 
-// Create a lid for your tray.  The lid will use the same floor thickness and interlock thickness as the tray.
+// Create a lid for your tray.  (See Lid and Interlock Parameters).
 Create_A_Lid = false;
 
 // Select a build mode, then use the controls in the same named tabs to specify generation parameters
@@ -22,7 +22,7 @@ Square_Cup_Size = 1; //[1.0:0.5:10]
 
 /* [Length/Width Cups] */
 // This create the specified number of equal length cups along the length of the tray.
-Cup_Along_Length = 1; //[1.0:1.0:10]
+Cups_Along_Length = 1; //[1.0:1.0:10]
 
 // This create the specified number of equal width cups across the width of the tray.
 Cups_Across_Width = 1; //[1.0:1.0:10]
@@ -60,12 +60,16 @@ Divider_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
 Corner_Roundness = 0.5; // [0.00:0.01:1.00]
 
 /* [Lid Parameters] */
-Lid_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes", "Block_Handle", "Bar_Handle"]
+Lid_Handle_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes", "Block_Handle", "Bar_Handle"]
 
 // How thick should the lid be.  This is the height above the top edge of the tray.  If you want a fully recessed lid, specify 0 here.
 Lid_Thickness = 0.07; // [0.00:0.01:0.50]
 
+// Creates a raised edge so a tray can be stacked on top of the lid.
 Interlocking_Lid = false;
+
+// Only used when creating a tray too.  Creates a grid on top of the lid that matches the dividers, for labels, of course.
+Label_Lid = false;
 
 Number_Of_Finger_Holes = 1; // [1, 2]
 
@@ -116,6 +120,7 @@ scaled_finger_hole_diameter = Scale_Units * Finger_Hole_Diameter;
 scaled_block_handle_length = Scale_Units * Block_or_Bar_Handle_Length;
 scaled_block_handle_width = Scale_Units * Block_Width_or_Bar_Diameter;
 scaled_block_handle_height = Scale_Units * Block_Handle_Height;
+scaled_divider_height = scaled_tray_height-scaled_Interlock_Divider_Wall_Recess;
 
 // A function to add up the elements of an vector.
 function add_vect(v, i = 0, r = 0) = i < len(v) ? add_vect(v, i + 1, r + v[i]) : r;
@@ -181,7 +186,7 @@ module mkshell (length, width, height, wall, radius, offset=0, offset2=0) {
     a single module so I don't have to duplicate code between then.  But for now
     these work without having to conditionally figure out the geometries.
  */
-module make_l_div(pos, from=0, to=1.0, hscale=1.0) {
+module make_l_div(pos, height, from=0, to=1.0, hscale=1.0) {
     // pos is a normalized position, from 0.0 to 1.0
     // from is a normalized start point, default 0.0 is one wall
     // end is a normalized end point, default 1.0 is the other wall
@@ -192,7 +197,7 @@ module make_l_div(pos, from=0, to=1.0, hscale=1.0) {
     lstart = (_length*from) - (_length/2);
     lend = (_length*to) - (_length/2);
     llen = (lend - lstart); 
-    hdiv = (scaled_tray_height-scaled_Interlock_Divider_Wall_Recess) * hscale;
+    hdiv = (height) * hscale;
     union() {
         translate([lstart+(llen/2),wpos,hdiv/2]) {
             cube([llen,scaled_divider_thickness,hdiv], center=true);
@@ -210,7 +215,7 @@ module make_l_div(pos, from=0, to=1.0, hscale=1.0) {
     }
 }
 
-module make_w_div(pos, from=0, to=1.0, hscale=1.0) {
+module make_w_div(pos, height, from=0, to=1.0, hscale=1.0) {
     // pos is a normalized position, from 0.0 to 1.0
     // from is a normalized start point, default 0.0 is one wall
     // end is a normalized end point, default 1.0 is the other wall
@@ -221,7 +226,7 @@ module make_w_div(pos, from=0, to=1.0, hscale=1.0) {
     wstart = (_length*from) - (_length/2);
     wend = (_length*to) - (_length/2);
     wlen = (wend-wstart);
-    hdiv = (scaled_tray_height-scaled_Interlock_Divider_Wall_Recess) * hscale;
+    hdiv = (height) * hscale;
     union() {
         translate([lpos,wstart+(wlen/2),hdiv/2]) {
             cube([scaled_divider_thickness,wlen, hdiv], center=true);
@@ -239,18 +244,19 @@ module make_w_div(pos, from=0, to=1.0, hscale=1.0) {
     }
 }
 
-module make_div(dir, pos, from=0, to=1.0, hscale=1.0) {
+module make_div(dir, pos, height, from=0, to=1.0, hscale=1.0) {
     if (dir == 0 || dir == "-" || dir == "length") {
-        make_l_div(pos, from, to, hscale);
+        make_l_div(pos, height, from, to, hscale);
     }
     if (dir == 1 || dir == "|" || dir == "width") {
-        make_w_div(pos, from, to, hscale);
+        make_w_div(pos, height, from, to, hscale);
     }
 }
 
 module make_lid() {
     difference() {
         union() {
+            label_div_offset = (Label_Lid == true)?0.2:0.0;
             // Create the part of the lid above the tray edge.
             if (scaled_lid_thickness > 0) {
                 translate([0,0,scaled_lid_thickness/2]) {
@@ -268,20 +274,26 @@ module make_lid() {
                 // Create a raised edge so a tray placed on top of this tray will stack interlocked.
                 translate([0,0,(scaled_lid_thickness+scaled_interlock_height/2)-0.001]) {
                     difference() {
-                        mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+0.001, scaled_wall_thickness, scaled_corner_radius); 
-                        mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+0.1, 
+                        mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+label_div_offset+0.001, scaled_wall_thickness, scaled_corner_radius); 
+                        mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+label_div_offset+0.1, 
                         scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
                     }
                 }
             }
+            if (Label_Lid == true) {
+                translate([0,0,scaled_lid_thickness-0.001]) {
+                    make_tray_cups(label_div_offset);
+                }
+            }
+
             // Create additive handles, if specified.
             rotate([0,0,Rotate_Handle]) {
-                if (Lid_Style == "Block_Handle") {
+                if (Lid_Handle_Style == "Block_Handle") {
                     translate([0,0, scaled_lid_thickness+scaled_block_handle_height/2 - 0.001]) {
                         cube([scaled_block_handle_length, scaled_block_handle_width, scaled_block_handle_height], center=true);
                     }
                 }
-                if (Lid_Style == "Bar_Handle") {
+                if (Lid_Handle_Style == "Bar_Handle") {
                     translate([0,0, (scaled_lid_thickness + scaled_block_handle_width)/2]) {
                         rotate([0,90,0]) {
                             cylinder(scaled_block_handle_length, r=scaled_block_handle_width/2, center=true);
@@ -291,7 +303,7 @@ module make_lid() {
             }
         }
         // Create subtractive handles, if specified.
-        if (Lid_Style == "Finger_Holes") {
+        if (Lid_Handle_Style == "Finger_Holes") {
             rotate([0,0,Rotate_Handle]) {
                 height = scaled_lid_thickness+scaled_interlock_height*4;
                 hole_offset = scaled_tray_length/2 * Finger_Hole_Position;
@@ -351,129 +363,131 @@ module make_tray() {
     }
 }
 
-module make_dividers(divs, orient="length", from=0, to=1.0, hscale=1.0) {
+module make_dividers(divs, height, orient="length", from=0, to=1.0, hscale=1.0) {
     // divs is a normalized array of 
     // positions for each divider to create.
     for ( i = divs ){
-        make_div(orient, i, from, to, hscale);
+        make_div(orient, i, height, from, to, hscale);
     }
 }
 
-module make_equal_cups(num_divs, orient="length", from=0.0, to=1.0) {
+module make_equal_cups(num_divs, height, orient="length", from=0.0, to=1.0) {
     increment = 1.0/num_divs;
     for ( i = [increment : increment : (1.0-increment)] ){
-        make_div(orient, i, from, to);
+        make_div(orient, i, height, from, to);
     }
 }
 
-module make_cups(ratios, orient="length", from=0.0, to=1.0, hscale=1.0) {
+module make_cups(ratios, height, orient="length", from=0.0, to=1.0, hscale=1.0) {
     divs2 = make_normalized_divs(ratios);
-    make_dividers(divs2, orient, from, to, hscale);
+    make_dividers(divs2, height, orient, from, to, hscale);
 }
 
-module make_walls(section, mode, walls, divisions) {
+module make_walls(section, mode, walls, height, divisions) {
     echo(section, mode, walls)
     if (section < len(divisions)-1) {
         from = divisions[section];
         to = divisions[section+1];
             if (len(walls) > 2 && walls[2] > 0) {
                 ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) walls[1+i] ]);
-                make_cups(ratios, mode, from, to);
+                make_cups(ratios, height, mode, from, to);
                 wall_specs = sub_vect(walls, 2 + walls[1]); 
-                make_walls(section+1, mode, wall_specs, divisions);
+                make_walls(section+1, mode, wall_specs, height, divisions);
             }
             else {
                 ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) 1 ]);
-                make_cups(ratios, mode, from, to);
+                make_cups(ratios, height, mode, from, to);
                 wall_specs = sub_vect(walls, 2); 
-                make_walls(section+1, mode, wall_specs, divisions);
+                make_walls(section+1, mode, wall_specs, height, divisions);
             }
     }
 }
 
-module make_custom_div(div_list) {
+module make_custom_div(div_list, height) {
     if (len(div_list) > 3) {
         dir = div_list[0];
         pos = div_list[1];
         from = div_list[2];
         to = div_list[3];
-        make_div(dir, pos, from, to);
+        make_div(dir, pos, height, from, to);
         next_list = sub_vect(div_list, 4);
-        make_custom_div(next_list);
+        make_custom_div(next_list, height);
     }
 }
 
+module make_equal_cup_dividers(height) {
+    make_equal_cups(Tray_Length/Square_Cup_Size, height, "width");
+    make_equal_cups(Tray_Width/Square_Cup_Size, height, "length");
+}
+
+module make_lw_cups(height) {
+    if (lcups > 0) {
+        make_equal_cups(Cups_Along_Length, height, "width");
+    }
+    if (wcups > 0) {
+        make_equal_cups(Cups_Along_Width, height, "length");
+    }
+}
+
+module make_lw_cup_ratios(height) {
+    make_cups(Lengthwise_Cup_Ratios, height, "width");
+    make_cups(Widthwise_Cup_Ratios, height, "length");
+}
+
+module make_custom_div_ratios(height) {
+    mode = Custom_Col_Row_Ratios[0];
+    other_mode = (mode == 1)?0:1;
+    divs = Custom_Col_Row_Ratios[1];
+    if (Custom_Col_Row_Ratios[2] > 0) {
+        ratios = rev_vect([ for( i = [0 : 1 : divs-1]) Custom_Col_Row_Ratios[2+i] ]);
+        make_cups(ratios, height, mode);
+        divisions = concat( [0.0], make_normalized_divs(ratios), [1.0]);
+        start = 2 + divs;
+        wall_specs = sub_vect(Custom_Col_Row_Ratios, start);
+        make_walls(0, other_mode, wall_specs, height, divisions);
+    }
+    else {
+        make_equal_cups(divs, height, mode);
+        divisions = concat( [0.0], make_normalized_divs([ for( i = [0 : 1 : divs-1]) 1 ]), [1.0]);
+        wall_specs = sub_vect(Custom_Col_Row_Ratios, 2);
+        make_walls(0, other_mode, wall_specs, height, divisions);
+    }
+}
+
+module make_tray_cups(height) {
+    if (Build_Mode == "Square_Cups") {
+        make_equal_cup_dividers(height);
+    }
+
+    if (Build_Mode == "Length_Width_Cups") {
+        make_lw_cups(height);
+    }
+
+    if (Build_Mode == "Length_Width_Cup_Ratios") {
+        make_lw_cup_ratios(height);
+    }
+
+    if (Build_Mode == "Custom_Divisions_per_Column_or_Row") {
+        make_custom_div_ratios(height);
+    }
+
+    if (Build_Mode == "Custom_Ratio_Divisions") {
+        make_custom_div(Custom_Division_List, height);
+    }
+}
+
+echo(Build_Mode)
 if (Build_Mode == "Just_the_Tray") {
     make_tray();
 }
-
-if (Build_Mode == "Square_Cups") {
-    lcups = Tray_Length/Square_Cup_Size;
-    wcups = Tray_Width/Square_Cup_Size;
-    union() {
-        make_tray();
-        make_equal_cups(lcups, "width");
-        make_equal_cups(wcups, "length");
-    }
-}
-
-if (Build_Mode == "Length_Width_Cups") {
-    union() {
-        make_tray();
-        if (Cup_Along_Length > 0) {
-            make_equal_cups(Cup_Along_Length, "width");
-        }
-        if (Cups_Across_Width > 0) {
-            make_equal_cups(Cups_Across_Width, "length");
-        }
-    }
-}
-
-if (Build_Mode == "Length_Width_Cup_Ratios") {
-    union() {
-        make_tray();
-        if (Cup_Along_Length > 0) {
-            make_cups(Lengthwise_Cup_Ratios, "width");
-            //make_cups([1,2,1,2,1], "width");
-        }
-        if (Cups_Across_Width > 0) {
-            make_cups(Widthwise_Cup_Ratios, "length");
-        }
-    }
-}
-
-if (Build_Mode == "Custom_Divisions_per_Column_or_Row") {
-    union() {
-        make_tray();
-        mode = Custom_Col_Row_Ratios[0];
-        other_mode = (mode == 1)?0:1;
-        divs = Custom_Col_Row_Ratios[1];
-        if (Custom_Col_Row_Ratios[2] > 0) {
-            ratios = rev_vect([ for( i = [0 : 1 : divs-1]) Custom_Col_Row_Ratios[2+i] ]);
-            make_cups(ratios, mode);
-            divisions = concat( [0.0], make_normalized_divs(ratios), [1.0]);
-            start = 2 + divs;
-            wall_specs = sub_vect(Custom_Col_Row_Ratios, start);
-            make_walls(0, other_mode, wall_specs, divisions);
-        }
-        else {
-            make_equal_cups(divs, mode);
-            divisions = concat( [0.0], make_normalized_divs([ for( i = [0 : 1 : divs-1]) 1 ]), [1.0]);
-            wall_specs = sub_vect(Custom_Col_Row_Ratios, 2);
-            make_walls(0, other_mode, wall_specs, divisions);
-        }
-    }
-}
-
-if (Build_Mode == "Custom_Ratio_Divisions") {
-    union() {
-        make_tray();
-        make_custom_div(Custom_Division_List);
-    }
-}
-
-if (Build_Mode == "Tray_Lid") {
+else if (Build_Mode == "Tray_Lid") {
     make_lid();
+}
+else {
+    union() {
+        make_tray();
+        make_tray_cups(scaled_divider_height);
+    }
 }
 
 if (Build_Mode != "Tray_Lid" && Create_A_Lid == true) {
@@ -481,3 +495,5 @@ if (Build_Mode != "Tray_Lid" && Create_A_Lid == true) {
         make_lid();
     }
 }
+
+
