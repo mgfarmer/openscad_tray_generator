@@ -60,6 +60,13 @@ def numstr(number):
         return int(number)
     return number
 
+
+def get_lw_str(length, width, height=None):
+    if height is not None:
+        return f"{numstr(length)}x{numstr(width)}x{numstr(height)}"
+    return f"{numstr(length)}x{numstr(width)}"
+
+
 def slice(files, count_only, force_slice):
     global number_of_objects_sliced
 
@@ -161,7 +168,7 @@ def create_incremental_division_variants(length, width, height, count_only):
 
             folder_path = get_output_folder(
                 f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{ht}-{unit_name}-H")
-            file_base = f"{folder_path}/tray_{numstr(length)}x{numstr(width)}x{numstr(ht)}_{ldiv}x{wdiv}_cups"
+            file_base = f"{folder_path}/tray_{get_lw_str(length,width,height)}_{ldiv}x{wdiv}_cups"
             files = make_files_dict(folder_path, file_base)
 
             cmd = get_oscad_command(length, width, height,
@@ -185,7 +192,7 @@ def create_square_cup_tray_variations(length, width, height, count_only):
 
                 folder_path = get_output_folder(
                     f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
-                file_base = f"{folder_path}/tray_{numstr(length)}x{numstr(width)}x{numstr(height)}_{lcups}x{wcups}_cups"
+                file_base = f"{folder_path}/tray_{get_lw_str(length,width,height)}_{lcups}x{wcups}_cups"
                 files = make_files_dict(folder_path, file_base)
 
                 cmd = get_oscad_command(length, width, height,
@@ -210,7 +217,6 @@ def create_json_presets(count_only):
 
         folder_path = get_output_folder("presets")
 
-        # Recessed Lid
         file_base = f"{folder_path}/{i}"
         files = make_files_dict(folder_path, file_base)
         cmd = get_oscad_command(None, None, None,
@@ -237,7 +243,7 @@ def create_json_customs(length, width, height, count_only):
         #exp = re.sub("\s+", '', expression)# .translate(str.maketrans('', '', ' \n\t\r'))
         folder_path = get_output_folder(
             f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
-        file_base = f"{folder_path}/tray_{i}_{numstr(length)}x{numstr(width)}x{numstr(height)}"
+        file_base = f"{folder_path}/tray_{i}_{get_lw_str(length,width,height)}"
         files = make_files_dict(folder_path, file_base)
 
         cmd = get_oscad_command(length, width, height,
@@ -255,7 +261,7 @@ def create_json_customs(length, width, height, count_only):
         expression = json_customs['customDivisions'][i]['Custom_Division_List']
         folder_path = get_output_folder(
             f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
-        file_base = f"{folder_path}/tray_{i}_{numstr(length)}x{numstr(width)}x{numstr(height)}"
+        file_base = f"{folder_path}/tray_{i}_{get_lw_str(length,width,height)}"
         files = make_files_dict(folder_path, file_base)
 
         cmd = get_oscad_command(length, width, height,
@@ -272,7 +278,7 @@ def create_lids(length, width, count_only):
         f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W")
 
     # Recessed Lid
-    file_base = f"{folder_path}/tray_lid_recessed_{numstr(length)}x{numstr(width)}"
+    file_base = f"{folder_path}/tray_lid_recessed_{get_lw_str(length,width)}"
 
     files = make_files_dict(folder_path, file_base)
     cmd = get_oscad_command(length, width, None,
@@ -283,7 +289,7 @@ def create_lids(length, width, count_only):
     generate_object(cmd, files, count_only)
 
     # Non Recessed Lid
-    file_base = f"{folder_path}/tray_lid_finger_{numstr(length)}x{numstr(width)}"
+    file_base = f"{folder_path}/tray_lid_finger_{get_lw_str(length,width)}"
     files = make_files_dict(folder_path, file_base)
     cmd = get_oscad_command(length, width, 0.0,
                             [
@@ -293,7 +299,7 @@ def create_lids(length, width, count_only):
     generate_object(cmd, files, count_only)
 
     # Interlocking Lid
-    file_base = f"{folder_path}/tray_lid_interlocking_finger_{numstr(length)}x{numstr(width)}"
+    file_base = f"{folder_path}/tray_lid_interlocking_finger_{get_lw_str(length,width)}"
     files = make_files_dict(folder_path, file_base)
     cmd = get_oscad_command(length, width, 0.0,
                             [
@@ -304,7 +310,7 @@ def create_lids(length, width, count_only):
     generate_object(cmd, files, count_only)
 
     # Bar Handle Lid
-    file_base = f"{folder_path}/tray_lid_handle_{numstr(length)}x{numstr(width)}"
+    file_base = f"{folder_path}/tray_lid_handle_{get_lw_str(length,width)}"
     files = make_files_dict(folder_path, file_base)
     cmd = get_oscad_command(length, width, 0.0,
                             [
