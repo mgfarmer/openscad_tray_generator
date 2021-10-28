@@ -5,6 +5,7 @@ import math
 import argparse
 import subprocess
 import json
+import logging
 
 def get_oscad_command(length, width, height, params):
     global args
@@ -82,6 +83,7 @@ def slice(files, count_only, force_slice):
         if not count_only:
             print("    ", f"Slicing:   {tray_file_path_model}")
         if not args.dryrun and not count_only:
+            logging.info("Slicing:", slice_cmd)
             slicer = subprocess.run(slice_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                     universal_newlines=True)
             print(slicer.stdout)
@@ -113,10 +115,10 @@ def render_object(cmd, files, count_only):
             print(f"Generating: ({number_of_objects_generated} of {number_of_objects_total}):")
             print(f"     Rendering: {_filestr}")
 
-        print(cmd)
         if not args.dryrun and not count_only:
             if not os.path.exists(files['folder']):
                 os.makedirs(files['folder'])
+            logging.info("Render:", cmd)
             out = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  universal_newlines=True)
             #print(out.stdout)
@@ -126,9 +128,22 @@ def render_object(cmd, files, count_only):
         return True
     return False
 
+issued_cmds = []
 def generate_object(cmd, files, count_only):
+    global issued_cmds
+    if (cmd in issued_cmds):
+        # Duplicate command generated, no need to do it again.
+        return;
     force_slice = render_object(cmd, files, count_only)
     slice(files, count_only, force_slice)
+    issued_cmds += [cmd]
+
+
+def get_cup_str(lcups, wcups):
+    # Putting "1x1_cups" just doesn't make much sense.
+    if lcups == 1 and wcups == 1:
+        return ""
+    return f"_{lcups}x{wcups}_cups"
 
 def create_incremental_division_variants(length, width, height, count_only):
     global args
@@ -168,7 +183,7 @@ def create_incremental_division_variants(length, width, height, count_only):
 
             folder_path = get_output_folder(
                 f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{ht}-{unit_name}-H")
-            file_base = f"{folder_path}/tray_{get_lw_str(length,width,height)}_{ldiv}x{wdiv}_cups"
+            file_base = f"{folder_path}/tray_{get_lw_str(length,width,height)}{get_cup_str(ldiv,wdiv)}"
             files = make_files_dict(folder_path, file_base)
 
             cmd = get_oscad_command(length, width, height,
@@ -192,7 +207,7 @@ def create_square_cup_tray_variations(length, width, height, count_only):
 
                 folder_path = get_output_folder(
                     f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
-                file_base = f"{folder_path}/tray_{get_lw_str(length,width,height)}_{lcups}x{wcups}_cups"
+                file_base = f"{folder_path}/tray_{get_lw_str(length,width,height)}{get_cup_str(lcups,wcups)}"
                 files = make_files_dict(folder_path, file_base)
 
                 cmd = get_oscad_command(length, width, height,
@@ -531,6 +546,7 @@ def main():
     floor_t = 1.75/scale_units
     div_t = 1.75/scale_units
     intr_h = 1.75/scale_units
+    intr_r = 1.78/scale_units
     intr_g = 0.08/scale_units
 
     # Now process user overrides from the command line.
@@ -551,7 +567,10 @@ def main():
     if (args.interlock_dimensions is not None):
         if len(args.interlock_dimensions) >= 1:
             intr_h = args.interlock_dimensions[0]
+            intr_r = args.interlock_dimensions[1]
         if len(args.interlock_dimensions) > 1:
+            intr_r = args.interlock_dimensions[1]
+        if len(args.interlock_dimensions) > 2:
             intr_g = args.interlock_dimensions[1]
 
     wall_defs = [
@@ -560,8 +579,10 @@ def main():
         "-D", f"Divider_Wall_Thickness={div_t:.3f}",
         "-D", f"Corner_Roundness=1.0",
         "-D", f"Interlock_Height={intr_h:.3f}",
-        "-D", f"Interlock_Gap={intr_g:.3f}"
+        "-D", f"Interlock_Gap={intr_g:.3f}",
+        "-D", f"Interlock_Divider_Wall_Recess={intr_r:.3f}"
     ]
+
 
     number_of_objects = 0
     number_of_objects_generated = 0
@@ -605,6 +626,11 @@ def main():
 
     # Now do the real work...
     enumerate_objects(count_only=False)
+
+
+    number_of_objects = 0
+    number_of_objects_generated = 0
+    number_of_objects_sliced = 0
 
     # Finally, recount everything to report accurate results
     enumerate_objects(count_only=True)
