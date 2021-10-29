@@ -154,7 +154,9 @@ def create_incremental_division_variants(length, width, height, count_only):
     # A record of square trays we've generated, so we don't do duplicates...
     unique_sq_objects = []
 
+    #for ldiv in range(1, ldivs+1, 2 if (scale_units < 25) else 1):
     for ldiv in range(1, ldivs+1):
+
         if (ldiv in args.length_skip_divs):
             continue
         for wdiv in range(1, wdivs+1):
@@ -395,8 +397,8 @@ def enumerate_tray_sizes():
         for length in args.lengths:
             for width in args.widths:
 
-                max_length = math.max(max_length, length)
-                max_width = math.max(max_width, width)
+                max_length = max(max_length, length)
+                max_width = max(max_width, width)
 
                 if width > length:
                     # This prevents duplicate trays
@@ -409,8 +411,9 @@ def enumerate_objects(count_only):
     global args
 
     sizes = enumerate_tray_sizes()
-
-    print(sizes)
+    if args.info:
+        print("These tray sizes will be considered:")
+        print(sizes)
 
     handled_lids = []
     for s in sizes:
@@ -471,6 +474,10 @@ def make_args():
     description='Preview, render, and slice tray variations.  This script can generate a vast library of storage trays ready to be printed.  Slicing is handled by a "slice" batch/shell script that you need to implement for your slicer (that way this script does not need to know the details on how to invoke every possible slicer).',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+    parser.add_argument('-i', '--info', type=str2bool, nargs="?", default=False, const=True,
+                    help="Print more verbose information.")
+
+
     parser.add_argument('--arg_file', type=open, action=LoadFromFile,
                     help="Specify a file that contains all the command line parameter, and use them instead.")
 
@@ -506,6 +513,9 @@ def make_args():
     g1.add_argument('--json_custom_defs', type=str, nargs="+",
                     help="Generate only specified preset(s) from the specified json_custom file (see --json_custom)")
     
+
+
+
     g0 = parser.add_argument_group('Generation Control Options')
 
     g0.add_argument('--oscad', type=str, nargs="+", default=r"openscad",
@@ -545,6 +555,8 @@ def make_args():
                     help="Automatically generate lids to fit generated tray sizes")
 
 
+
+
     g2 = parser.add_argument_group('Tray Divisions',
                                    "Options in this section control how divisions (or cups) are created in the tray.")
 
@@ -563,18 +575,20 @@ def make_args():
                     help="Automatically generate divisions unit incremental  length/width cups")
 
     g2.add_argument("--length_div_minimum_size", type=float,
-                    default=1.0,
-                    help="When generating tray length divisions (i.e. trays with 1, 2, 3, etc.. divisions) stop creating divisions when they become smaller than this value.")
+                    help="When generating tray length divisions (i.e. trays with 1, 2, 3, etc.. divisions) \
+                        stop creating divisions when they become smaller than this value. \
+                        Default minimum size is 1 inch or 3 cm, depending on --unit choice.")
 
     g2.add_argument('--length_skip_divs', nargs="+", type=float,
-                    help="List of divisions to skip.  If you really don't want trays with a specific number of length divisions, specify them in this list.", default=[])
+                    help="List of divisions to skip.  If you really do not want trays with a specific number of length divisions, specify them in this list.", default=[])
 
     g2.add_argument("--width_div_minimum_size", type=float,
-                    default=1.0,
-                    help="When generating tray width divisions (i.e. trays with 1, 2, 3, etc.. divisions) stop creating divisions when they become smaller than this value.")
+                    help="When generating tray width divisions (i.e. trays with 1, 2, 3, etc.. divisions) \
+                        stop creating divisions when they become smaller than this value. \
+                        Default minimum size is 1 inch or 3 cm, depending on --unit choice.")
 
     g2.add_argument('--width_skip_divs', nargs="+", type=float,
-                    help="List of dimensions to skip. If you really don't want trays with a specific number of width divisions, specify them in this list.", default=[])
+                    help="List of dimensions to skip. If you really do not want trays with a specific number of width divisions, specify them in this list.", default=[])
 
     g3 = parser.add_argument_group('Wall and Interlock Dimensions')
 
@@ -585,6 +599,34 @@ def make_args():
                     help="interlocking dimensions")
 
     args = parser.parse_args()
+
+def determine_units():
+    global unit_name
+    global scale_units
+
+    scale_units = 25.4
+    unit_name="in"
+
+    if (args.units == "inch"):
+        scale_units = 25.4
+        unit_name = "in"
+    if (args.units == "cm"):
+        scale_units = 10.0
+        unit_name = "cm"
+    if (isfloat(args.units)):
+        unit_name = "flibits"
+        scale_units = float(args.units)
+
+    # pattern for matching "<unit_name>=<scale-factor>"
+    pattern = re.compile('(\w+)=(.*)')
+    m = pattern.match(args.units)
+    if m:
+        unit_name = m.group(1)
+        scale_units = float(m.group(2))
+
+    if args.info:
+        print(f"Units: {unit_name}")
+        print(f"Scale: {scale_units} mm/{unit_name}")
 
 def main():
     global args
@@ -609,6 +651,13 @@ def main():
 
     make_args()
 
+    if not args.dimensions and not (args.lengths and args.widths and args.heights):
+        print("You need to specify dimensions of the tray(s) you want to create using")
+        print("--dimension/--heights, or --lengths, --widths, and --height.")
+        print('For instance, try "--dimension 2x4x1"')
+        print('Use "-h" to get more help.')
+        sys.exit(0)
+
     if args.count_only:
         args.dryrun = True
 
@@ -626,25 +675,13 @@ def main():
         f = open(args.json_custom)
         json_customs = json.load(f)
 
-    scale_units = 25.4
-    unit_name="in"
 
-    if (args.units == "inch"):
-        scale_units = 25.4
-        unit_name = "in"
-    if (args.units == "cm"):
-        scale_units = 10.0
-        unit_name = "cm"
-    if (isfloat(args.units)):
-        unit_name = "flibits"
-        scale_units = float(args.units)
+    determine_units()
 
-    # pattern for matching "<unit_name>=<scale-factor>"
-    pattern = re.compile('(\w+)=(.*)')
-    m = pattern.match(args.units)
-    if m:
-        unit_name = m.group(1)
-        scale_units = float(m.group(2))
+    if not args.length_div_minimum_size:
+        args.length_div_minimum_size = 1 if scale_units > 25 else 3
+    if not args.width_div_minimum_size:
+        args.width_div_minimum_size = 1 if scale_units > 25 else 3
 
     # These are default values in mm, scaled to user units.
     wall_t = 1.75/scale_units
@@ -703,8 +740,13 @@ def main():
     count_summary += f"Number of objects existing:         {number_of_objects-number_of_objects_generated}\n"
 
     if args.count_only:
-        print("Count Only:")
+        print("Count Summary:")
         print(count_summary)
+        sys.exit(0)
+
+    if number_of_objects == 0:
+        print(count_summary)
+        print("This probably wasn't what you were expecting!")
         sys.exit(0)
 
     if number_of_objects_generated == 0 and number_of_objects_sliced == 0:
@@ -716,6 +758,7 @@ def main():
     if (not args.dryrun and number_of_objects > 0 and not args.doit):
         print("This is what is going to happen:")
         print(count_summary)
+        print('You can disable this prompt with "--doit"')
         confirm = input("Are you ready to do this? [Y/n]: ")
         if confirm.lower().startswith('n'):
             print("OK, maybe next time...")
