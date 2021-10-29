@@ -185,8 +185,7 @@ Anyway, if you want STL files (or any other format that OpenSCAD exports to), us
 
 Don't so that, it is just an example.
 
-To wrap up this Getting Started section, try the same command you used earlier to generate the 
-two trays:
+Now, try the same command we used earlier to generate the two trays:
 ```
 > python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1 --flat --doit
 All your work is already done!
@@ -211,6 +210,10 @@ Number of objects existing:         2
 Only the one new tray was generated.  Now, if you really want to regenerate all the trays, you can do that using
 the "--regen" command line parameter (or completely delete the mytrays folder).  Go ahead and try it (it is just 3 
 tray...you have time).
+
+There is so much more...
+
+
 
 ## Printing Your Trays
 
