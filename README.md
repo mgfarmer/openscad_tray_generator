@@ -29,7 +29,11 @@ Download and install the latest version of OpenSCAD.  It is recommend that you a
 your path.  If you don't, you'll need to tell Tray Generator where to find the executable using the --oscad 
 command line parameter (or you could just edit the source and hard code the full path).
 
-You probably already have python 3.8+.  If not, get it from [pyhton.org](python.org)
+You probably already have python 3.8+.  If not, get it from [python.org](python.org)
+```
+> python --version
+Python 3.8.7
+```
 
 If you have a 3D printer, you probably have a slicer, and that slicer probably has a command line interface.
 Tray Generator can, optionally, automatically slice the tray models that you create.  To make this work
@@ -48,7 +52,7 @@ Simple! You only need to clone this repo to your system.
 
 You can get usage information via:
 ```
-python tray_generator.py -h
+> python tray_generator.py -h
 ```
 ## Getting Started
 
@@ -57,18 +61,23 @@ First cd to the folder where you cloned the repo.
 Basic invocation starts with 
   
 ```
-python .\make_trays.py
+> python .\make_trays.py
+You need to specify an output folder (-o <folder>) so I know where to put everything.
 ```
 That will do nothing but print some information to help you get started.  So try:
 ```
-python .\make_trays.py -o mytrays
+> python .\make_trays.py -o mytrays
+You need to specify dimensions of the tray(s) you want to create using
+--dimension/--heights, or --lengths, --widths, and --height.
+For instance, try "--dimension 2x4x1"
+Use "-h" to get more help
 ```
 This tells Tray Generator to place all generated objects in to a subfolder called "mytrays".
 But nothing is generated yet because you haven't told Tray Generator what size trays you want to create.
-So, next:
+So, try this next:
 
 ```
-python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1
+> python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1
 This is what is going to happen:
 Number of objects declared:         2
 Number of objects to be gen/sliced: 2, 0
@@ -92,7 +101,7 @@ operations that will execute to generate the trays.  This is a great way of seei
 Go ahead and type "n" to cancel the process, then add the -d parameter:
 
 ```
-python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1 -d
+> python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1 -d
 Generating: (1 of 2):
      Rendering: mytrays/4-in-L/4-in-W/1-in-H/tray_4x4x1.png mytrays/4-in-L/4-in-W/1-in-H/tray_4x4x1.3mf
 Generating: (2 of 2):
@@ -110,7 +119,7 @@ it much easier to find the tray you want to print in the future.  You can, howev
 command line option to have all generate files placed in the top level of the output folder.  Try it:
 
 ```
-python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1 -d
+> python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1 -d
 Generating: (1 of 2):
      Rendering: mytrays/tray_4x4x1.png mytrays/tray_4x4x1.3mf
 Generating: (2 of 2):
@@ -126,7 +135,7 @@ See how the file location changed.
 Finally, lets create these two trays:
 
 ```
-python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1 --flat --doit
+> python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1 --flat --doit
 Generating: (1 of 2):
      Rendering: mytrays/tray_4x4x1.png mytrays/tray_4x4x1.3mf
 Generating: (2 of 2):
