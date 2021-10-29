@@ -8,8 +8,8 @@ You are a maker.  You have, or are building, a vast inventory of tools and small
 keep all of this stuff sorted and organized. Maybe you have an existing storage cabinet with drawers, or maybe 
 you are building one of those too.  What you need for those drawers are organizer trays tailor made for specific items.
 
-This tool, which I call [product] (because I cannot think of a better name right now) might be just what you 
-need. [product] can be used to build a large library of trays, trays that are all designed to work together.
+This tool, which I call Tray Generator (because I cannot think of a better name right now) might be just what you 
+need. Tray Generator can be used to build a large library of trays, trays that are all designed to work together.
 They will fill grids nicely.  They will stack nicely.  You can even print lids.  
 
 The general intent is that you can build a large library of compatible trays and then print what you need, when you 
@@ -26,20 +26,23 @@ future.)
 * [Optional] A slicer with a CLI (I use PrusaSlicer)
 
 Download and install the latest version of OpenSCAD.  It is recommend that you add the OpenSCAD folder to
-your path.  If you don't, you'll need to tell [product] where to find the executable using the --oscad 
+your path.  If you don't, you'll need to tell Tray Generator where to find the executable using the --oscad 
 command line parameter (or you could just edit the source and hard code the full path).
 
 You probably already have python 3.8+.  If not, get it from [pyhton.org](python.org)
 
 If you have a 3D printer, you probably have a slicer, and that slicer probably has a command line interface.
-[product] can, optionally, automatically slice the tray models that you create.  To make this work
+Tray Generator can, optionally, automatically slice the tray models that you create.  To make this work
 you need to modify slice.bat/slice.sh to properly invoke your slicer of choice.  I use PrusaSlicer, so
 these files are already setup to work with it, though you might need to specify the path or put your slicer 
 on your path
 
 ### Installing
 
-Simple! You only need to clone this repo to you system.
+Simple! You only need to clone this repo to your system.
+```
+> git clone https://github.com/mgfarmer/openscad_tray_generator.git
+```
 
 ## Help
 
@@ -60,8 +63,8 @@ That will do nothing but print some information to help you get started.  So try
 ```
 python .\make_trays.py -o mytrays
 ```
-This tells [product] to place all generated objects in to a subfolder called "mytrays".
-But nothing is generated yet because you haven't told [product] what size trays you want to create.
+This tells Tray Generator to place all generated objects in to a subfolder called "mytrays".
+But nothing is generated yet because you haven't told Tray Generator what size trays you want to create.
 So, next:
 
 ```
@@ -76,14 +79,14 @@ Are you ready to do this? [Y/n]:
 ```
 Finally, something good is going to happen.  You can see that two trays are going to be created.  
 Each tray will be the dimensions you specified on the command line.  By the way, the default unit scale 
-is inches, but [product] works just as well with metric by specifying "-u/--units cm" on the command line.
+is inches, but Tray Generator works just as well with metric by specifying "-u/--units cm" on the command line.
 All dimensions expressed in the command line parameters are expressed using the chosen unit scale.
 
-So before [product] does anything, it will ask you if you're ready to proceed.  This is done, by
-default, because [product] is capable of generating 1000's of trays in a single invocation, and 
+So before Tray Generator does anything, it will ask you if you're ready to proceed.  This is done, by
+default, because Tray Generator is capable of generating 1000's of trays in a single invocation, and 
 that can take many hours to complete (of course you can always abort, but still...)
 
-You can also specify "-d/--dryrun" on the command line and [product] will just print out a list
+You can also specify "-d/--dryrun" on the command line and Tray Generator will just print out a list
 operations that will execute to generate the trays.  This is a great way of seeing what is going to happen.
 
 Go ahead and type "n" to cancel the process, then add the -d parameter:
@@ -101,7 +104,7 @@ Number of objects to be gen/sliced: 2, 0
 Number of objects existing:         0
 ```
 Now you can see more details about the two trays that are going to be generated, including where the
-files will be located.  By default, [product] will organize the trays into subfolders organized first
+files will be located.  By default, Tray Generator will organize the trays into subfolders organized first
 by length, then by width, then by height.  If you are creating a large library of trays this will make
 it much easier to find the tray you want to print in the future.  You can, however, use the "--flat"
 command line option to have all generate files placed in the top level of the output folder.  Try it:
@@ -154,7 +157,7 @@ fairly fast and is a great way to see what your library will  look like before c
 to the full model generation.  You your favorite file browser/image viewer to check out
 the png file previews.
 
-[product] generates 3mf model files by default.  You can specify STL, but be aware that
+Tray Generator generates 3mf model files by default.  You can specify STL, but be aware that
 at this time OpenSCAD generates STL files with many errors that some slicers don't even
 notice.  (When I started this I was using STL files because that's what I always used. I 
 loaded the STL into my slicer and it looked fine, but when I printed it, some walls were
@@ -191,5 +194,3 @@ Contributors names and contact info
 
 This project is licensed under GPL v2 License - see the LICENSE.md file for details
 
-
-[product]: Tray Generator
