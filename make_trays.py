@@ -651,6 +651,13 @@ def main():
 
     make_args()
 
+    if args.count_only:
+        args.dryrun = True
+
+    if not args.count_only and args.output_folder == "":
+        print("You need to specify an output folder (-o <folder>) so I know where to put everything.")
+        sys.exit(0)
+
     if not args.dimensions and not (args.lengths and args.widths and args.heights):
         print("You need to specify dimensions of the tray(s) you want to create using")
         print("--dimension/--heights, or --lengths, --widths, and --height.")
@@ -658,12 +665,6 @@ def main():
         print('Use "-h" to get more help.')
         sys.exit(0)
 
-    if args.count_only:
-        args.dryrun = True
-
-    if not args.count_only and args.output_folder == "":
-        print("You need to specify an output folder (-o <folder>) so I know where to put everything.")
-        sys.exit(0)
 
     json_presets = None
     if (args.json != ""):
@@ -774,14 +775,6 @@ def main():
 
     # Now do the real work...
     enumerate_objects(count_only=False)
-
-
-    number_of_objects = 0
-    number_of_objects_generated = 0
-    number_of_objects_sliced = 0
-
-    # Finally, recount everything to report accurate results
-    enumerate_objects(count_only=True)
 
     count_summary = f"Number of objects declared:         {number_of_objects}\n"
     count_summary += f"Number of objects to be gen/sliced: {number_of_objects_generated}, {number_of_objects_sliced}\n"

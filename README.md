@@ -180,8 +180,37 @@ Anyway, if you want STL files (or any other format that OpenSCAD exports to), us
 "-e/-export_model_as" command line parameter;
 
 ```
-python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1 -e STL
+> python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1 -e STL
 ```
+
+Don't so that, it is just an example.
+
+To wrap up this Getting Started section, try the same command you used earlier to generate the 
+two trays:
+```
+> python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1 --flat --doit
+All your work is already done!
+Use --regen and/or --reslice if you need to.
+Number of objects declared:         2
+Number of objects to be gen/sliced: 0, 0
+Number of objects existing:         2
+```
+Tray Generator will not generate models if they already exist in the output folder.  This both saves time
+and allows you to add to the library by adding new dimensions.  Only the new trays will get generated. Try this:
+
+```
+> python .\make_trays.py -o mytrays --dimensions 4x4x1 6x4x1 2x4x1 --flat --doit
+Generating: (1 of 1):
+     Rendering: mytrays/tray_2x4x1.png mytrays/tray_2x4x1.3mf
+
+Summary:
+Number of objects declared:         3
+Number of objects to be gen/sliced: 1, 0
+Number of objects existing:         2
+```
+Only the one new tray was generated.  Now, if you really want to regenerate all the trays, you can do that using
+the "--regen" command line parameter (or completely delete the mytrays folder).  Go ahead and try it (it is just 3 
+tray...you have time).
 
 ## Printing Your Trays
 
