@@ -6,12 +6,15 @@ import argparse
 import subprocess
 import json
 import logging
+import platform
+import shutil
 
 def get_oscad_command(length, width, height, params):
     global args
     global wall_defs
     # First, the executable...
-    cmd = [args.oscad]
+    cmd = [openscad_exec]
+
 
     # Then the thickness parameters, which are computed from the unit base
     cmd += wall_defs
@@ -86,9 +89,13 @@ def slice(files, count_only, force_slice):
             logging.info("Slicing:", slice_cmd)
             slicer = subprocess.run(slice_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                     universal_newlines=True)
-            print(slicer.stdout)
-            if (slicer.returncode):
-                print(slicer.stderr)
+
+            if args.show_output or slicer.returncode != 0:
+                if slicer.stdout:
+                    print(slicer.stdout)
+                if slicer.stderr:
+                    print(slicer.stderr)
+
 
 def render_object(cmd, files, count_only):
     global args
@@ -113,7 +120,7 @@ def render_object(cmd, files, count_only):
         _filestr = " ".join(_files)
         if not count_only:
             print(f"Generating: ({number_of_objects_generated} of {number_of_objects_total}):")
-            print(f"     Rendering: {_filestr}")
+            print(f"     Rendering: {files['model']}")
 
         if not args.dryrun and not count_only:
             if not os.path.exists(files['folder']):
@@ -121,10 +128,17 @@ def render_object(cmd, files, count_only):
             logging.info("Render:", cmd)
             out = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  universal_newlines=True)
-            #print(out.stdout)
+
+            if args.show_output or out.returncode != 0:
+                if out.stdout:
+                    print(out.stdout)
+                if out.stderr:
+                    print(out.stderr)
+
             if (out.returncode != 0):
-                print(out.stderr)
+                print("Error! Aborting this object...")
                 return
+
         return args.slice
     return False
 
@@ -477,6 +491,8 @@ def make_args():
     parser.add_argument('-i', '--info', type=str2bool, nargs="?", default=False, const=True,
                     help="Print more verbose information.")
 
+    parser.add_argument('--show_output', type=str2bool, nargs="?", default=False, const=True,
+                        help="Print output from subprocesses")
 
     parser.add_argument('--arg_file', type=open, action=LoadFromFile,
                     help="Specify a file that contains all the command line parameter, and use them instead.")
@@ -518,7 +534,7 @@ def make_args():
 
     g0 = parser.add_argument_group('Generation Control Options')
 
-    g0.add_argument('--oscad', type=str, nargs="+", default=r"openscad",
+    g0.add_argument('--oscad', type=str, nargs="+",
                         help="The openscad executable.  The default value assumes it is in your path.  Otherwise specify the full path to the executable.")
 
     g0.add_argument('-o', '--output_folder', type=str, default=r"",
@@ -625,8 +641,35 @@ def determine_units():
         scale_units = float(m.group(2))
 
     if args.info:
-        print(f"Units: {unit_name}")
-        print(f"Scale: {scale_units} mm/{unit_name}")
+        print(f"Units: '{unit_name}' scale: {scale_units} mm/{unit_name}")
+
+def parse_app_defaults(filename):
+    global openscad_exec
+    global args
+
+    #if args.info:
+    print(f"Reading app defaults from: {filename}")
+
+    with open(filename) as f:
+        defaults = json.load(f)
+
+    if defaults.get("openscad_exec"):
+        openscad_exec = defaults.get('openscad_exec', openscad_exec)
+
+
+def is_tool(name):
+    try:
+        devnull = open(os.devnull)
+        subprocess.Popen([name], stdout=devnull, stderr=devnull).communicate()
+    except OSError as e:
+        if e.errno == os.errno.ENOENT:
+            return False
+    return True
+
+
+def find_prog(prog):
+    cmd = "where" if platform.system() == "Windows" else "which"
+    return subprocess.call([cmd, prog])
 
 def main():
     global args
@@ -648,8 +691,18 @@ def main():
     global wall_defs
     global json_presets
     global json_customs
+    global openscad_exec
+
+    openscad_exec = 'openscad'
+    defaults_file = 'config.json'
+
+    if os.path.exists(defaults_file):
+        parse_app_defaults(defaults_file)
 
     make_args()
+
+    if args.oscad:
+        openscad_exec = args.oscad
 
     if args.count_only:
         args.dryrun = True
@@ -726,6 +779,18 @@ def main():
         "-D", f"Interlock_Divider_Wall_Recess={intr_r:.3f}"
     ]
 
+    # Check that we can resolve an OpenSCAD executable
+    if not os.path.exists(openscad_exec):
+        openscad_path = shutil.which(openscad_exec)
+        if not openscad_path:
+            print(f"An OpenSCAD executable could not be resolved!")
+            print(f"Check your config.json, --oscad param, or your PATH")
+        else:
+            if args.info:
+                print(f"OpenSCAD: {openscad_path} (from your path)")
+    else:
+        if args.info:
+            print(f"OpenSCAD: {openscad_exec}")
 
     number_of_objects = 0
     number_of_objects_generated = 0
