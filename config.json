@@ -2,12 +2,11 @@
     "openscad_exec": "openscad",
     "units": "in",
     "model_format": "3mf",
-    "default_dim_in_mm": {
-        "wall": 2.75,
-        "floor": 1.75,
-        "division": 1.75,
-        "interlock": 1.75,
-        "interlock_recess": 1.78,
-        "interlock_gap": 0.08
-    }
+    "output_folder": "mytrays",
+    "openscad_preset_file": "tray_generator.json",
+    "openscad_preset_names": "mypreset",
+    "custom_layouts_file": "custom_layouts.json",
+    "dimensions": "8x3x1 8x2x1",
+    "length_div_minimum_size": 1,
+    "flat": false
 }

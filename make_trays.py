@@ -11,15 +11,14 @@ import shutil
 
 def get_oscad_command(length, width, height, params):
     global args
-    global wall_defs
     # First, the executable...
-    cmd = [openscad_exec]
+    cmd = [config['openscad_exec']]
 
 
     # Then the thickness parameters, which are computed from the unit base
-    cmd += wall_defs
+    cmd += config['wall_defs']
 
-    cmd += ["-D", f"Scale_Units={scale_units}"]
+    cmd += ["-D", f"Scale_Units={config['scale_units']}"]
 
     # Then the primary object dimensions, global to all objects
     if (length is not None):
@@ -41,16 +40,16 @@ def make_files_dict(folder_path, file_base):
         "folder": folder_path,
         "base": file_base,
         "png": f"{file_base}.png",
-        "model": f"{file_base}.{model_format}",
+        "model": f"{file_base}.{config['model_format']}",
         "gcode": f"{file_base}.gcode"
     }
     return files
 
 def get_output_folder(subfolder):
-    if (args.flat):
-        return f"{args.output_folder}"
+    if config['flat'] == True:
+        return f"{config['output_folder']}"
 
-    return f"{args.output_folder}/{subfolder}"
+    return f"{config['output_folder']}/{subfolder}"
 
 def get_slice_cmd(model):
     if sys.platform.startswith('win32'):
@@ -162,8 +161,8 @@ def get_cup_str(lcups, wcups):
 def create_incremental_division_variants(length, width, height, count_only):
     global args
 
-    ldivs = math.floor(length/args.length_div_minimum_size)
-    wdivs = math.floor(width/args.width_div_minimum_size)
+    ldivs = math.floor(length/config['length_div_minimum_size'])
+    wdivs = math.floor(width/config['width_div_minimum_size'])
 
     # A record of square trays we've generated, so we don't do duplicates...
     unique_sq_objects = []
@@ -171,10 +170,10 @@ def create_incremental_division_variants(length, width, height, count_only):
     #for ldiv in range(1, ldivs+1, 2 if (scale_units < 25) else 1):
     for ldiv in range(1, ldivs+1):
 
-        if (ldiv in args.length_skip_divs):
+        if (ldiv in config['length_skip_divs']):
             continue
         for wdiv in range(1, wdivs+1):
-            if (wdiv in args.width_skip_divs):
+            if (wdiv in config['width_skip_divs']):
                 continue
 
             lsize = length/ldiv
@@ -198,7 +197,7 @@ def create_incremental_division_variants(length, width, height, count_only):
                 ht = math.floor(height)
 
             folder_path = get_output_folder(
-                f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{ht}-{unit_name}-H")
+                f"{numstr(length)}-{config['unit_name']}-L/{numstr(width)}-{config['unit_name']}-W/{ht}-{config['unit_name']}-H")
             file_base = f"{folder_path}/tray_{get_lw_str(length,width,height)}{get_cup_str(ldiv,wdiv)}"
             files = make_files_dict(folder_path, file_base)
 
@@ -215,10 +214,10 @@ def create_square_cup_tray_variations(length, width, height, count_only):
     global args
 
     cup_sizes = None
-    if not args.square_cup_sizes:
+    if not config['square_cup_sizes']:
         cup_sizes = range(1,int(max(max_length,max_width)))
     else:
-        cup_sizes = args.square_cup_sizes
+        cup_sizes = config['square_cup_sizes']
 
     for cup_size in cup_sizes:
         if cup_size <= length or cup_size <= width:
@@ -228,7 +227,7 @@ def create_square_cup_tray_variations(length, width, height, count_only):
                 wcups = math.floor(width / cup_size)
 
                 folder_path = get_output_folder(
-                    f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
+                    f"{numstr(length)}-{config['unit_name']}-L/{numstr(width)}-{config['unit_name']}-W/{numstr(height)}-{config['unit_name']}-H")
                 file_base = f"{folder_path}/tray_{get_lw_str(length,width,height)}{get_cup_str(lcups,wcups)}"
                 files = make_files_dict(folder_path, file_base)
 
@@ -245,7 +244,7 @@ def create_simple_tray(length, width, height, count_only):
     global args
 
     folder_path = get_output_folder(
-        f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
+        f"{numstr(length)}-{config['unit_name']}-L/{numstr(width)}-{config['unit_name']}-W/{numstr(height)}-{config['unit_name']}-H")
     file_base = f"{folder_path}/tray_{get_lw_str(length,width,height)}"
     files = make_files_dict(folder_path, file_base)
 
@@ -257,16 +256,16 @@ def create_simple_tray(length, width, height, count_only):
     generate_object(cmd, files, count_only)
 
 
-def create_json_presets(count_only):
+def create_openscad_presets(count_only):
     global args
-    global json_presets
 
-    if json_presets is None:
+    if config['openscad_presets_json'] is None:
         return
 
-    for i in json_presets['parameterSets']:
-        if args.presets is not None:
-            if not i in args.presets:
+    # Check that names in the list are actually in the file and report otherwise
+    for i in config['openscad_presets_json']['parameterSets']:
+        if config['openscad_preset_names']:
+            if not i in config['openscad_preset_names']:
                 continue
 
         folder_path = get_output_folder("presets")
@@ -275,28 +274,27 @@ def create_json_presets(count_only):
         files = make_files_dict(folder_path, file_base)
         cmd = get_oscad_command(None, None, None,
                                 [
-                                    '-p', f"{args.json}",
+                                    '-p', f"{config['openscad_presets_file']}",
                                     '-P', i
                                 ])
         generate_object(cmd, files, count_only)
 
 
-def create_json_customs(length, width, height, count_only):
+def create_custom_layouts(length, width, height, count_only):
     global args
-    global json_customs
 
-    if json_customs is None:
+    if config['custom_layouts_json'] is None:
         return
 
-    for i in json_customs['customColRows']:
-        if args.json_custom_defs is not None:
-            if not i in args.json_custom_defs:
+    for i in config['custom_layouts_json']['customColRows']:
+        if config['custom_layout_names'] is not None:
+            if not i in config['custom_layout_names']:
                 continue
 
-        expression = json_customs['customColRows'][i]['Custom_Col_Row_Ratios']
+        expression = config['custom_layouts_json']['customColRows'][i]['Custom_Col_Row_Ratios']
         #exp = re.sub("\s+", '', expression)# .translate(str.maketrans('', '', ' \n\t\r'))
         folder_path = get_output_folder(
-            f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
+            f"{numstr(length)}-{config['unit_name']}-L/{numstr(width)}-{config['unit_name']}-W/{numstr(height)}-{config['unit_name']}-H")
         file_base = f"{folder_path}/tray_{i}_{get_lw_str(length,width,height)}"
         files = make_files_dict(folder_path, file_base)
 
@@ -307,14 +305,14 @@ def create_json_customs(length, width, height, count_only):
                                 ])
         generate_object(cmd, files, count_only)
 
-    for i in json_customs['customDivisions']:
-        if args.json_custom_defs is not None:
-            if not i in args.json_custom_defs:
+    for i in config['custom_layouts_json']['customDivisions']:
+        if config['custom_layout_names'] is not None:
+            if not i in config['custom_layout_names']:
                 continue
 
-        expression = json_customs['customDivisions'][i]['Custom_Division_List']
+        expression = config['custom_layouts_json']['customDivisions'][i]['Custom_Division_List']
         folder_path = get_output_folder(
-            f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W/{numstr(height)}-{unit_name}-H")
+            f"{numstr(length)}-{config['unit_name']}-L/{numstr(width)}-{config['unit_name']}-W/{numstr(height)}-{config['unit_name']}-H")
         file_base = f"{folder_path}/tray_{i}_{get_lw_str(length,width,height)}"
         files = make_files_dict(folder_path, file_base)
 
@@ -329,49 +327,45 @@ def create_lids(length, width, count_only):
     global args
 
     folder_path = get_output_folder(
-        f"{numstr(length)}-{unit_name}-L/{numstr(width)}-{unit_name}-W")
+        f"{numstr(length)}-{config['unit_name']}-L/{numstr(width)}-{config['unit_name']}-W")
 
-    # Recessed Lid
-    file_base = f"{folder_path}/tray_lid_recessed_{get_lw_str(length,width)}"
+    styles = config['lid_styles']
 
-    files = make_files_dict(folder_path, file_base)
-    cmd = get_oscad_command(length, width, None,
-                            [
-                                "-D", "Build_Mode=\"Tray_Lid\"",
-                                "-D", f"Lid_Thickness=0",
-                            ])
-    generate_object(cmd, files, count_only)
+    if not styles or "recessed" in styles:
+        # Recessed Lid
+        file_base = f"{folder_path}/tray_lid_recessed_{get_lw_str(length,width)}"
 
-    # Non Recessed Lid
-    file_base = f"{folder_path}/tray_lid_finger_{get_lw_str(length,width)}"
-    files = make_files_dict(folder_path, file_base)
-    cmd = get_oscad_command(length, width, 0.0,
-                            [
-                                "-D", "Build_Mode=\"Tray_Lid\"",
-                                "-D", f"Lid_Style=\"Finger_Holes\"",
-                            ])
-    generate_object(cmd, files, count_only)
+        files = make_files_dict(folder_path, file_base)
+        cmd = get_oscad_command(length, width, None,
+                                [
+                                    "-D", "Build_Mode=\"Tray_Lid\"",
+                                    "-D", f"Lid_Style=\"Finger_Holes\"",
+                                    "-D", f"Lid_Thickness=0",
+                                ])
+        generate_object(cmd, files, count_only)
 
-    # Interlocking Lid
-    file_base = f"{folder_path}/tray_lid_interlocking_finger_{get_lw_str(length,width)}"
-    files = make_files_dict(folder_path, file_base)
-    cmd = get_oscad_command(length, width, 0.0,
-                            [
-                                "-D", "Build_Mode=\"Tray_Lid\"",
-                                "-D", f"Lid_Style=\"Finger_Holes\"",
-                                "-D", f"Interlocking_Lid=true",
-                            ])
-    generate_object(cmd, files, count_only)
+    if not styles or "regular" in styles:
+            # Non Recessed Lid
+        file_base = f"{folder_path}/tray_lid_finger_{get_lw_str(length,width)}"
+        files = make_files_dict(folder_path, file_base)
+        cmd = get_oscad_command(length, width, 0.0,
+                                [
+                                    "-D", "Build_Mode=\"Tray_Lid\"",
+                                    "-D", f"Lid_Style=\"Finger_Holes\"",
+                                ])
+        generate_object(cmd, files, count_only)
 
-    # Bar Handle Lid
-    # file_base = f"{folder_path}/tray_lid_handle_{get_lw_str(length,width)}"
-    # files = make_files_dict(folder_path, file_base)
-    # cmd = get_oscad_command(length, width, 0.0,
-    #                         [
-    #                             "-D", "Build_Mode=\"Tray_Lid\"",
-    #                             "-D", f"Lid_Style=\"Bar_Handle\"",
-    #                         ])
-    # generate_object(cmd, files, count_only)
+    if not styles or "stackable" in styles:
+        # Interlocking Lid
+        file_base = f"{folder_path}/tray_lid_interlocking_finger_{get_lw_str(length,width)}"
+        files = make_files_dict(folder_path, file_base)
+        cmd = get_oscad_command(length, width, 0.0,
+                                [
+                                    "-D", "Build_Mode=\"Tray_Lid\"",
+                                    "-D", f"Lid_Style=\"Finger_Holes\"",
+                                    "-D", f"Interlocking_Lid=true",
+                                ])
+        generate_object(cmd, files, count_only)
 
 def enumerate_tray_sizes():
     global max_length
@@ -380,12 +374,12 @@ def enumerate_tray_sizes():
     max_length = 0;
     max_width = 0;
 
-    if args.dimensions:
+    if config['dimensions']:
         sizes = []
-        for elem in args.dimensions:
+        for elem in config['dimensions']:
             lxw = elem.split('x')
             if len(lxw) < 2:
-                print("Invalid dimension specified for --dimensions. Need LxW or LxWxH, got", elem)
+                print("Invalid dimension specified for 'dimensions'. Need LxW or LxWxH, got", elem)
             
             length = float(lxw[0])
             width = float(lxw[1])
@@ -395,7 +389,7 @@ def enumerate_tray_sizes():
 
             if len(lxw) == 2:
                 if not args.heights:
-                    print("When using --dimensions with LxW expressions, you must also provide heights using --heights, or use LxWxH expressions")
+                    print("When using 'dimensions' with LxW expressions, you must also provide heights using 'heights', or use LxWxH expressions")
                     sys.exit(1)
                 for height in args.heights:
                     sizes += [[length, width, height]]
@@ -425,7 +419,7 @@ def enumerate_objects(count_only):
     global args
 
     sizes = enumerate_tray_sizes()
-    if args.info:
+    if not count_only and args.info:
         print("These tray sizes will be considered:")
         print("    ", sizes)
 
@@ -434,26 +428,26 @@ def enumerate_objects(count_only):
         length = s[0]
         width = s[1]
         height = s[2]
-        if args.auto_squares or args.auto_divisions:
-            if (args.auto_squares):
+        if config['make_square_cups'] or config['make_divisions']:
+            if (config['make_square_cups']):
                 create_square_cup_tray_variations(
                     length, width, height, count_only)
 
-            if (args.auto_divisions):
+            if (config['make_divisions']):
                 create_incremental_division_variants(
                     length, width, height, count_only)
 
         else:
             create_simple_tray(length, width, height, count_only)
 
-        create_json_customs(length, width, height, count_only)
+        create_custom_layouts(length, width, height, count_only)
 
-        if (args.auto_lids):
+        if (config['make_lids']):
             if not [length,width] in handled_lids:
                 create_lids(length, width, count_only)
                 handled_lids += [length,width]
 
-    create_json_presets(count_only)
+    create_openscad_presets(count_only)
 
 def isfloat(value):
   try:
@@ -488,6 +482,9 @@ def make_args():
     description='Preview, render, and slice tray variations.  This script can generate a vast library of storage trays ready to be printed.  Slicing is handled by a "slice" batch/shell script that you need to implement for your slicer (that way this script does not need to know the details on how to invoke every possible slicer).',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+    parser.add_argument('-c', '--config', type=str,
+                        help="Specify a file that contains a partial or complete library configuration.")
+
     parser.add_argument('-i', '--info', type=str2bool, nargs="?", default=False, const=True,
                     help="Print more verbose information.")
 
@@ -519,21 +516,19 @@ def make_args():
                     help="Specifies a list of all the tray heights to generate. Can be fractional.")
 
     g1.add_argument('-x', '--dimensions', type=str, nargs="+", default=[],
-                    help='Specify a fixed list of dimensions to create as a list of "LxW" string or "LxWxH" strings (but not both). If the H term is not provided then heights specific by --heights will be used.')
+                    help='Specify a fixed list of dimensions to create as a list of "LxW" string or "LxWxH" strings. If the H term is not provided then heights specified by --heights is required.')
 
-    g1.add_argument('--json', type=str, default="",
+    g1.add_argument('--openscad_presets_file', type=str, default="",
                     help="Load custom tray definitions from this OpenSCAD preset file.  All presets will be generated unless (see --preset)")
 
-    g1.add_argument('--presets', type=str, nargs="+", default=[],
+    g1.add_argument('--openscad_preset_names', type=str, nargs="+",
                     help="Generate only specified preset(s) from the specified json preset file (see --json)")
 
-    g1.add_argument('--json_custom', type=str, 
-                    help="Specify a json file containing custom layout expressions. All layouts will be generated unless (see --json_custom_defs)")
+    g1.add_argument('--custom_layouts_file', type=str, 
+                    help="Specify a json file containing custom layout expressions. Al l layouts will be generated unless (see --custom_layout_names)")
 
-    g1.add_argument('--json_custom_defs', type=str, nargs="+",
-                    help="Generate only specified preset(s) from the specified json_custom file (see --json_custom)")
-    
-
+    g1.add_argument('--custom_layout_names', type=str, nargs="+",
+                    help="Generate only specified preset(s) from the specified json_custom file (see --custom_layouts_file)")
 
 
     g0 = parser.add_argument_group('Generation Control Options')
@@ -550,7 +545,7 @@ def make_args():
     g0.add_argument('-d', '--dryrun', type=str2bool, nargs="?", default=False, const=True,
                     help="Dry run.  Just print the commands that will be executed.")
 
-    g0.add_argument('-c', '--count_only', type=str2bool, nargs="?", default=False, const=True,
+    g0.add_argument('--count_only', type=str2bool, nargs="?", default=False, const=True,
                     help="Like --dryrun, but just report the count of trays that would be generated.")
 
     g0.add_argument('--doit', type=str2bool, nargs="?", default=False, const=True,
@@ -571,27 +566,26 @@ def make_args():
     g0.add_argument('--reslice', type=str2bool, nargs="?", default=False, const=True,
                     help="Reslice the model file to gcode even if it already exits.  Normally gcode files are not resliced if they exist.  Use this option for force reslicing.  This is useful it you changed a slicing profile and need to reslice everything.")
 
-    g0.add_argument('--auto_lids', type=str2bool, nargs="?", default=False, const=True,
+    g0.add_argument('--make_lids', type=str2bool, nargs="?", default=False, const=True,
                     help="Automatically generate lids to fit generated tray sizes")
 
-
+    g0.add_argument('--lid_styles', type=str, nargs="+", 
+                    help="Make only listed styles.  If not provide all style will made. Options are 'recessed', 'regular', and 'stackable'")
 
 
     g2 = parser.add_argument_group('Tray Divisions',
                                    "Options in this section control how divisions (or cups) are created in the tray.")
 
-    g2.add_argument('--auto_squares', type=str2bool, nargs="?", default=False, const=True,
+    g2.add_argument('--make_square_cups', type=str2bool, nargs="?", default=False, const=True,
                     help="Automatically generate cup divisions for square cups");
 
     g2.add_argument('--square_cup_sizes', nargs="+", type=float, default=[],
                     help='Square cup sizes to create for each tray. This is a list of square sizes that will be created for \
                             each tray.  This is only done when when the cup size is a integer multiple of both the length and \
                             width of the tray being created. For example, a 6x4 tray will not generate square cups of size 3 because \
-                            4/3 is not an integer. Specify an empty list to skip generating square cups (though some may still be \
-                            created from the "divions" parameters below.  Can be fractional.  If not provided then all unit sizes will \
-                            be created.  Requires --auto_squares')
+                            4/3 is not an integer. Requires --make_square_cups')
 
-    g2.add_argument('--auto_divisions', type=str2bool, nargs="?", default=False, const=True,
+    g2.add_argument('--make_divisions', type=str2bool, nargs="?", default=False, const=True,
                     help="Automatically generate divisions unit incremental  length/width cups")
 
     g2.add_argument("--length_div_minimum_size", type=float,
@@ -612,72 +606,244 @@ def make_args():
 
     g3 = parser.add_argument_group('Wall and Interlock Dimensions')
 
+    g3.add_argument('--wall_dimensions', nargs="+", type=float,
+                    help="Specifies how thick the outer wall, floor, and dividers will be.  If only one number is provided, it wil be used for all three dminesions. If 2 numbers are provided the first will be the wall and floor thickness and the second will be the divider thickness.  Specify all three for ultimate flexability")
+
+    g3.add_argument('--interlock_dimensions', nargs="+", type=float,
+                    help="interlocking dimensions")
+
+
     args = parser.parse_args()
 
 def determine_units():
-    global unit_name
-    global scale_units
 
-    if args.units:
-        unit_name = args.units
-
-    if unit_name:
-        if constants_json.get("scales", {}).get(unit_name):
-            scale_units = constants_json.get("scales", {}).get(unit_name)
+    if config['unit_name']:
+        if global_config.get("scales", {}).get(config['unit_name']):
+            config['scale_units'] = global_config.get("scales", {}).get(config['unit_name'])
         else:
-            if (isfloat(unit_name)):
-                unit_name = "flibit"
-                scale_units = float(args.units)
+            if (isfloat(config['unit_name'])):
+                config['unit_name'] = "flibit"
+                config['scale_units'] = float(args.units)
 
         # pattern for matching "<unit_name>=<scale-factor>"
         pattern = re.compile('(\w+)=(.*)')
-        m = pattern.match(unit_name)
+        m = pattern.match(config['unit_name'])
         if m:
-            unit_name = m.group(1)
-            scale_units = float(m.group(2))
+            config['unit_name'] = m.group(1)
+            config['scale_units'] = float(m.group(2))
 
     if args.info:
-        print(f"Units: '{unit_name}' scale: {scale_units} mm/{unit_name}")
+        print(
+            f"Units: '{config['unit_name']}' scale: {config['scale_units']} mm/{config['unit_name']}")
 
-def parse_app_defaults(filename):
-    global openscad_exec
-    global unit_name
-    global model_format
+def get_global_config():
+    global global_config
+
+    filename = "make_trays.json"
+    if not os.path.exists(filename):
+        print(f"{filename} does not exist. Cannot continue!")
+        sys.exit(1)
+
+    if args.info:
+        print(f"Reading application data from: {filename}")
+
+    with open(filename) as g:
+        global_config = json.load(g)
+
+def get_config_value(key, arg, default=None, asList=False):
+    result = None
+    if global_config and global_config.get(key):
+        result = global_config.get(key)
+    if config_json and config_json.get(key):
+        result = config_json.get(key)
+    if arg:
+        return arg
+    
+    if result:
+        if asList:
+            return result.split()
+
+        return result
+
+    return default
+
+def get_configuration():
+    global config
     global config_json
-    global constants_json
+
+    filename = args.config
+
+    get_global_config()
+
+    if filename and not os.path.exists(filename):
+        print(f"Specified config file does not exist: {filename}")
+        sys.exit(1)
+
+    config = {}
+    config_json = None
 
     if args.info:
-        print(f"Reading configuration defaults from: {filename}")
-        print(f"Reading scale information from: make_trays.json")
+        print(f"Reading configuration from: {filename}")
 
-    with open("make_trays.json") as g:
-        constants_json = json.load(g)
+    if filename:
+        with open(filename) as f:
+            config_json = json.load(f)
 
-    with open(filename) as f:
-        config_json = json.load(f)
+    config['openscad_exec'] = get_config_value(
+        "openscad_exec", args.oscad, "openscad")
+    config['unit_name'] = get_config_value('units', args.units, "in")
+    config['model_format'] = get_config_value(
+        'model_format', args.model_format, "3mf")
+    config['output_folder'] = get_config_value(
+        'output_folder', args.output_folder)
 
-    if config_json.get("openscad_exec"):
-        openscad_exec = config_json.get('openscad_exec', openscad_exec)
+    # Check that we can resolve an OpenSCAD executable
+    if not os.path.exists(config['openscad_exec']):
+        openscad_path = shutil.which(config['openscad_exec'])
+        if not openscad_path:
+            print(f"An OpenSCAD executable could not be resolved!")
+            print(f"Check your config.json, --oscad param, or your PATH")
+        else:
+            if args.info:
+                print(f"OpenSCAD: {openscad_path} (from your path)")
+    else:
+        if args.info:
+            print(f"OpenSCAD: {config['openscad_exec']}")
 
-    if config_json.get("units"):
-        unit_name = config_json.get('units')
+    if not args.count_only and config['output_folder'] is None:
+        print("You need to specify an output folder (-o <folder>) so I know where to put everything.")
+        sys.exit(0)
 
-    if config_json.get("model_format"):
-        model_format = config_json.get('model_format')
+    config['dimensions'] = get_config_value("dimensions", args.dimensions, asList=True)
+    config['lengths'] = get_config_value("lengths", args.lengths, asList=True)
+    config['widths'] = get_config_value("widths", args.widths, asList=True)
+    config['heights'] = get_config_value("heights", args.heights, asList=True)
+
+    # if not config['dimensions'] and \
+    #         not (config['lengths'] and config['widths'] and config['heights']):
+    #     print("You need to specify dimensions of the tray(s) you want to create using")
+    #     print("--dimension/--heights, or --lengths, --widths, and --height.")
+    #     print('For instance, try "--dimension 2x4x1"')
+    #     print('Use "-h" to get more help.')
+    #     sys.exit(0)
+
+    determine_units()
+    setup_other_dimensions()
+
+    config['openscad_presets_json'] = None
+    filename = get_config_value(
+        "openscad_presets_file", args.openscad_presets_file)
+
+    if filename and not os.path.exists(filename):
+        print(f"Specified openscad preset file does not exist: {filename}")
+        sys.exit(0)
+
+    if filename:
+        f = open(filename)
+        config['openscad_presets_json'] = json.load(f)
+        config['openscad_presets_file'] = filename
+
+    config['openscad_preset_names'] = get_config_value(
+        "openscad_preset_names", args.openscad_preset_names, asList=True)
+
+    if not config['openscad_presets_json'] and config['openscad_preset_names']:
+        print("Warning: Openscad presets were specified, but no OpenSCAD preset file was specified")
+
+    if config['openscad_presets_json'] and config['openscad_preset_names']:
+        for i in config['openscad_preset_names']:
+            if not i in config['openscad_presets_json']['parameterSets']:
+                print(
+                    f"Warning: OpenSCAD preset named '{i}' is not present in {config['openscad_presets_file']}")
+
+    config['custom_layouts_json'] = None
+    filename = get_config_value("custom_layouts_file", args.custom_layouts_file)
+
+    if filename and not os.path.exists(filename):
+        print(f"Specified custom layout file does not exist: {filename}")
+        sys.exit(0)
+
+    if filename:
+        f = open(filename)
+        config['custom_layouts_json'] = json.load(f)
+        config['custom_layouts_file'] = filename
+
+    config['custom_layout_names'] = get_config_value(
+        "custom_layout_names", args.custom_layout_names, asList=True)
+
+    # TODO check layout names against those in the file
+
+
+    config['length_div_minimum_size'] = get_config_value(
+        "length_div_minimum_size", args.length_div_minimum_size)
+    # if not specified anywhere, make a reasonable default based on chosen unit scale
+    if not config['length_div_minimum_size']:
+        config['length_div_minimum_size'] = 1 if config['scale_units'] > 25 else 3
+
+    config['length_skip_divs'] = get_config_value(
+        "length_skip_divs", args.length_skip_divs, [], asList=True)
+
+    config['width_div_minimum_size'] = get_config_value(
+        "width_div_minimum_size", args.width_div_minimum_size)
+    # if not specified anywhere, make a reasonable default based on chosen unit scale
+    if not config['width_div_minimum_size']:
+        config['width_div_minimum_size'] = 1 if config['scale_units'] > 25 else 3
+
+    config['width_skip_divs'] = get_config_value(
+        "width_skip_divs", args.width_skip_divs, [], asList=True)
+
+    config['flat'] = get_config_value("flat", args.flat, False)
+
+    config['make_square_cups'] = get_config_value(
+        "make_square_cups", args.make_square_cups, False)
+
+    config['square_cup_sizes'] = get_config_value(
+        "square_cup_sizes", args.square_cup_sizes, asList=True)
+
+    config['make_divisions'] = get_config_value(
+        "make_divisions", args.make_divisions, False)
+
+    config['make_lids'] = get_config_value("make_lids", args.make_lids, False)
+
+    config['lid_styles'] = get_config_value("lid_styles", args.lid_styles, asList=True)
 
 def setup_other_dimensions():
-    global wall_defs
-
     # Get the values from the config.json.
-    dims = config_json.get("default_dim_in_mm", {})
-    wall_t = dims.get("wall", 1.75) / scale_units
-    floor_t = dims.get("floor", 1.75) / scale_units
-    div_t = dims.get("division", 1.75) / scale_units
-    intr_h = dims.get("interlock_height", 1.75) / scale_units
-    intr_r = dims.get("interlock_recess", 1.75) / scale_units
-    intr_g = dims.get("interlock_gap", 1.75) / scale_units
+    dims = get_config_value("default_dim_in_mm", None)
+    if dims:
+        wall_t = dims.get("wall", 1.75) / config['scale_units']
+        floor_t = dims.get("floor", 1.75) / config['scale_units']
+        div_t = dims.get("division", 1.75) / config['scale_units']
+        intr_h = dims.get("interlock_height", 1.75) / config['scale_units']
+        intr_r = dims.get("interlock_recess", 1.75) / config['scale_units']
+        intr_g = dims.get("interlock_gap", 1.75) / config['scale_units']
 
-    wall_defs = [
+    wall_dims = get_config_value("wall_dimensions", args.wall_dimensions)
+    if wall_dims:
+        if len(wall_dims) == 1:
+            wall_t = wall_dims[0]
+            floor_t = wall_dims[0]
+            div_t = wall_dims[0]
+        elif len(wall_dims) == 2:
+            wall_t = wall_dims[0]
+            floor_t = wall_dims[0]
+            div_t = wall_dims[1]
+        elif len(wall_dims) >= 3:
+            wall_t = wall_dims[0]
+            floor_t = wall_dims[1]
+            div_t = wall_dims[2]
+
+    interlock_dims = get_config_value(
+        "interlock_dimensions", args.interlock_dimensions)
+    if (interlock_dims is not None):
+        if len(interlock_dims) >= 1:
+            intr_h = interlock_dims[0]
+            intr_r = interlock_dims[1]
+        if len(interlock_dims) > 1:
+            intr_r = interlock_dims[1]
+        if len(interlock_dims) > 2:
+            intr_g = interlock_dims[1]
+
+    config['wall_defs'] = [
         "-D", f"Tray_Wall_Thickness={wall_t:.3f}",
         "-D", f"Floor_Thickness={floor_t:.3f}",
         "-D", f"Divider_Wall_Thickness={div_t:.3f}",
@@ -686,7 +852,6 @@ def setup_other_dimensions():
         "-D", f"Interlock_Gap={intr_g:.3f}",
         "-D", f"Interlock_Divider_Wall_Recess={intr_r:.3f}"
     ]
-
 
 
 def main():
@@ -704,80 +869,15 @@ def main():
     # Count of object sliced while running, for progrss reporting.
     global number_of_objects_sliced
 
-    global scale_units
-    global unit_name
-    global wall_defs
-    global json_presets
-    global json_customs
-    global openscad_exec
-    global model_format
-
-    model_format = "3mf"
-    openscad_exec = 'openscad'
-    defaults_file = 'config.json'
-
     make_args()
 
-    if os.path.exists(defaults_file):
-        parse_app_defaults(defaults_file)
-
-
-    if args.oscad:
-        openscad_exec = args.oscad
+    get_configuration()
 
     if args.count_only:
         args.dryrun = True
 
-    if args.model_format:
-        model_format = args.model_format
-
-    if not args.count_only and args.output_folder == "":
-        print("You need to specify an output folder (-o <folder>) so I know where to put everything.")
-        sys.exit(0)
-
-    if not args.dimensions and not (args.lengths and args.widths and args.heights):
-        print("You need to specify dimensions of the tray(s) you want to create using")
-        print("--dimension/--heights, or --lengths, --widths, and --height.")
-        print('For instance, try "--dimension 2x4x1"')
-        print('Use "-h" to get more help.')
-        sys.exit(0)
-
-
-    json_presets = None
-    if (args.json != ""):
-        f = open(args.json)
-        json_presets = json.load(f)
-
-    json_customs = None
-    if args.json_custom is not None:
-        f = open(args.json_custom)
-        json_customs = json.load(f)
-
-
-    determine_units()
-
-    if not args.length_div_minimum_size:
-        args.length_div_minimum_size = 1 if scale_units > 25 else 3
-    if not args.width_div_minimum_size:
-        args.width_div_minimum_size = 1 if scale_units > 25 else 3
-
-    setup_other_dimensions()
-
-    # Check that we can resolve an OpenSCAD executable
-    if not os.path.exists(openscad_exec):
-        openscad_path = shutil.which(openscad_exec)
-        if not openscad_path:
-            print(f"An OpenSCAD executable could not be resolved!")
-            print(f"Check your config.json, --oscad param, or your PATH")
-        else:
-            if args.info:
-                print(f"OpenSCAD: {openscad_path} (from your path)")
-    else:
-        if args.info:
-            print(f"OpenSCAD: {openscad_exec}")
-
     if args.info:
-        print(f"Will generate {model_format} files.")
+        print(f"Will generate {config['model_format']} files.")
 
     number_of_objects = 0
     number_of_objects_generated = 0

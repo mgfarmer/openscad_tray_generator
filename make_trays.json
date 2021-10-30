@@ -1,8 +1,17 @@
 {
+    "openscad_exec": "openscad",
     "scales": {
         "in": 25.4,
         "cm": 10.0,
         "digit": 19.05,
         "barleycorn": 8.4667
+    },
+    "default_dim_in_mm": {
+        "wall": 2.75,
+        "floor": 1.75,
+        "division": 1.75,
+        "interlock": 1.75,
+        "interlock_recess": 1.78,
+        "interlock_gap": 0.08
     }
  }
