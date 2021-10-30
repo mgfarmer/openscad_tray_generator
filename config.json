@@ -1,3 +1,13 @@
 {
-    "openscad_exec": "openscad"
+    "openscad_exec": "openscad",
+    "units": "in",
+    "model_format": "3mf",
+    "default_dim_in_mm": {
+        "wall": 2.75,
+        "floor": 1.75,
+        "division": 1.75,
+        "interlock": 1.75,
+        "interlock_recess": 1.78,
+        "interlock_gap": 0.08
+    }
 }

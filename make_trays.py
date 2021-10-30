@@ -41,7 +41,7 @@ def make_files_dict(folder_path, file_base):
         "folder": folder_path,
         "base": file_base,
         "png": f"{file_base}.png",
-        "model": f"{file_base}.{args.export_model_as}",
+        "model": f"{file_base}.{model_format}",
         "gcode": f"{file_base}.gcode"
     }
     return files
@@ -427,7 +427,7 @@ def enumerate_objects(count_only):
     sizes = enumerate_tray_sizes()
     if args.info:
         print("These tray sizes will be considered:")
-        print(sizes)
+        print("    ", sizes)
 
     handled_lids = []
     for s in sizes:
@@ -499,8 +499,12 @@ def make_args():
 
     g1 = parser.add_argument_group('Tray Parameters')
 
-    g1.add_argument('-u', '--units', type=str, default="inch",
-                    help='Tray dimensional units, options are "inch", "cm", or a numeric value. All dimensional parameters are expressed at this scale.  Fundamentally, openscad is unitless but most slicers assume that 1 unit is 1mm.  Specifying "inch" is the same as speciying "25.4", and "cm" is "10.0".  However, if you want to work in, say, Rack Units (RU), will need to specify the scale numerically as "ru=44.5"')
+    g1.add_argument('-u', '--units', type=str,
+                    help='Tray dimensional units, options are "in", "cm", or a numeric value. All dimensional \
+                        parameters are expressed at this scale.  Fundamentally, openscad is unitless but most \
+                        slicers assume that 1 unit is 1mm.  Specifying "in" is the same as speciying "25.4", \
+                        and "cm" is "10.0".  However, if you want to work in, say, Rack Units (RU), will \
+                        need to specify the scale numerically as "ru=44.5"')
 
     g1.add_argument('-l', '--lengths', nargs="+", type=float,
                     default=[4, 6, 8],
@@ -555,7 +559,7 @@ def make_args():
     g0.add_argument('-p', '--preview_only', type=str2bool, nargs="?", default=False, const=True,
                     help="Only generate preview images (faster for testing).  This is fairly fast so you can visually review what will be generated and sliced.")
 
-    g0.add_argument('-e', '--export_model_as', type=str, default="3mf",
+    g0.add_argument('--model_format', type=str,
                     help="Instruct openscad to export the rendered tray in this format.  Using 3MF is highly recommeneded.  Using STL is not recommended because OpenSCAD has trouble generating well-formed STL files. You may need to run repair utilities on it.  You can specify any other format supported by OpenSCAD to meet your needs.")
 
     g0.add_argument('--regen', type=str2bool, nargs="?", default=False, const=True,
@@ -608,68 +612,82 @@ def make_args():
 
     g3 = parser.add_argument_group('Wall and Interlock Dimensions')
 
-    g3.add_argument('--wall_dimensions', nargs="+", type=float,
-                    help="Specifies how thick the outer wall, floor, and dividers will be.  If only one number is provided, it wil be used for all three dminesions. If 2 numbers are provided the first will be the wall and floor thickness and the second will be the divider thickness.  Specify all three for ultimate flexability")
-
-    g3.add_argument('--interlock_dimensions', nargs="+", type=float,
-                    help="interlocking dimensions")
-
     args = parser.parse_args()
 
 def determine_units():
     global unit_name
     global scale_units
 
-    scale_units = 25.4
-    unit_name="in"
+    if args.units:
+        unit_name = args.units
 
-    if (args.units == "inch"):
-        scale_units = 25.4
-        unit_name = "in"
-    if (args.units == "cm"):
-        scale_units = 10.0
-        unit_name = "cm"
-    if (isfloat(args.units)):
-        unit_name = "flibits"
-        scale_units = float(args.units)
+    if unit_name:
+        if constants_json.get("scales", {}).get(unit_name):
+            scale_units = constants_json.get("scales", {}).get(unit_name)
+        else:
+            if (isfloat(unit_name)):
+                unit_name = "flibit"
+                scale_units = float(args.units)
 
-    # pattern for matching "<unit_name>=<scale-factor>"
-    pattern = re.compile('(\w+)=(.*)')
-    m = pattern.match(args.units)
-    if m:
-        unit_name = m.group(1)
-        scale_units = float(m.group(2))
+        # pattern for matching "<unit_name>=<scale-factor>"
+        pattern = re.compile('(\w+)=(.*)')
+        m = pattern.match(unit_name)
+        if m:
+            unit_name = m.group(1)
+            scale_units = float(m.group(2))
 
     if args.info:
         print(f"Units: '{unit_name}' scale: {scale_units} mm/{unit_name}")
 
 def parse_app_defaults(filename):
     global openscad_exec
-    global args
+    global unit_name
+    global model_format
+    global config_json
+    global constants_json
 
-    #if args.info:
-    print(f"Reading app defaults from: {filename}")
+    if args.info:
+        print(f"Reading configuration defaults from: {filename}")
+        print(f"Reading scale information from: make_trays.json")
+
+    with open("make_trays.json") as g:
+        constants_json = json.load(g)
 
     with open(filename) as f:
-        defaults = json.load(f)
+        config_json = json.load(f)
 
-    if defaults.get("openscad_exec"):
-        openscad_exec = defaults.get('openscad_exec', openscad_exec)
+    if config_json.get("openscad_exec"):
+        openscad_exec = config_json.get('openscad_exec', openscad_exec)
+
+    if config_json.get("units"):
+        unit_name = config_json.get('units')
+
+    if config_json.get("model_format"):
+        model_format = config_json.get('model_format')
+
+def setup_other_dimensions():
+    global wall_defs
+
+    # Get the values from the config.json.
+    dims = config_json.get("default_dim_in_mm", {})
+    wall_t = dims.get("wall", 1.75) / scale_units
+    floor_t = dims.get("floor", 1.75) / scale_units
+    div_t = dims.get("division", 1.75) / scale_units
+    intr_h = dims.get("interlock_height", 1.75) / scale_units
+    intr_r = dims.get("interlock_recess", 1.75) / scale_units
+    intr_g = dims.get("interlock_gap", 1.75) / scale_units
+
+    wall_defs = [
+        "-D", f"Tray_Wall_Thickness={wall_t:.3f}",
+        "-D", f"Floor_Thickness={floor_t:.3f}",
+        "-D", f"Divider_Wall_Thickness={div_t:.3f}",
+        "-D", f"Corner_Roundness=1.0",
+        "-D", f"Interlock_Height={intr_h:.3f}",
+        "-D", f"Interlock_Gap={intr_g:.3f}",
+        "-D", f"Interlock_Divider_Wall_Recess={intr_r:.3f}"
+    ]
 
 
-def is_tool(name):
-    try:
-        devnull = open(os.devnull)
-        subprocess.Popen([name], stdout=devnull, stderr=devnull).communicate()
-    except OSError as e:
-        if e.errno == os.errno.ENOENT:
-            return False
-    return True
-
-
-def find_prog(prog):
-    cmd = "where" if platform.system() == "Windows" else "which"
-    return subprocess.call([cmd, prog])
 
 def main():
     global args
@@ -692,20 +710,26 @@ def main():
     global json_presets
     global json_customs
     global openscad_exec
+    global model_format
 
+    model_format = "3mf"
     openscad_exec = 'openscad'
     defaults_file = 'config.json'
+
+    make_args()
 
     if os.path.exists(defaults_file):
         parse_app_defaults(defaults_file)
 
-    make_args()
 
     if args.oscad:
         openscad_exec = args.oscad
 
     if args.count_only:
         args.dryrun = True
+
+    if args.model_format:
+        model_format = args.model_format
 
     if not args.count_only and args.output_folder == "":
         print("You need to specify an output folder (-o <folder>) so I know where to put everything.")
@@ -737,47 +761,7 @@ def main():
     if not args.width_div_minimum_size:
         args.width_div_minimum_size = 1 if scale_units > 25 else 3
 
-    # These are default values in mm, scaled to user units.
-    wall_t = 1.75/scale_units
-    floor_t = 1.75/scale_units
-    div_t = 1.75/scale_units
-    intr_h = 1.75/scale_units
-    intr_r = 1.78/scale_units
-    intr_g = 0.08/scale_units
-
-    # Now process user overrides from the command line.
-    if (args.wall_dimensions is not None):
-        if len(args.wall_dimensions) == 1:
-            wall_t = args.wall_dimensions[0]
-            floor_t = args.wall_dimensions[0]
-            div_t = args.wall_dimensions[0]
-        elif len(args.wall_dimensions) == 2:
-            wall_t = args.wall_dimensions[0]
-            floor_t = args.wall_dimensions[0]
-            div_t = args.wall_dimensions[1]
-        elif len(args.wall_dimensions) >= 3:
-            wall_t = args.wall_dimensions[0]
-            floor_t = args.wall_dimensions[1]
-            div_t = args.wall_dimensions[2]
-
-    if (args.interlock_dimensions is not None):
-        if len(args.interlock_dimensions) >= 1:
-            intr_h = args.interlock_dimensions[0]
-            intr_r = args.interlock_dimensions[1]
-        if len(args.interlock_dimensions) > 1:
-            intr_r = args.interlock_dimensions[1]
-        if len(args.interlock_dimensions) > 2:
-            intr_g = args.interlock_dimensions[1]
-
-    wall_defs = [
-        "-D", f"Tray_Wall_Thickness={wall_t:.3f}",
-        "-D", f"Floor_Thickness={floor_t:.3f}",
-        "-D", f"Divider_Wall_Thickness={div_t:.3f}",
-        "-D", f"Corner_Roundness=1.0",
-        "-D", f"Interlock_Height={intr_h:.3f}",
-        "-D", f"Interlock_Gap={intr_g:.3f}",
-        "-D", f"Interlock_Divider_Wall_Recess={intr_r:.3f}"
-    ]
+    setup_other_dimensions()
 
     # Check that we can resolve an OpenSCAD executable
     if not os.path.exists(openscad_exec):
@@ -792,18 +776,23 @@ def main():
         if args.info:
             print(f"OpenSCAD: {openscad_exec}")
 
+    if args.info:
+        print(f"Will generate {model_format} files.")
+
     number_of_objects = 0
     number_of_objects_generated = 0
     number_of_objects_sliced = 0
     number_of_objects_total = 0
+
+    print("Accumulating work units...")
 
     # First rip through the generator and just count the number
     # of elements that will be generated.
     enumerate_objects(count_only=True)
 
     count_summary =  f"Number of objects declared:         {number_of_objects}\n"
-    count_summary += f"Number of objects to be gen/sliced: {number_of_objects_generated}, {number_of_objects_sliced}\n"
     count_summary += f"Number of objects existing:         {number_of_objects-number_of_objects_generated}\n"
+    count_summary += f"Number of objects to be gen/sliced: {number_of_objects_generated}, {number_of_objects_sliced}\n"
 
     if args.count_only:
         print("Count Summary:")
