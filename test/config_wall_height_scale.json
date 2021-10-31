@@ -1,0 +1,10 @@
+{
+    "openscad_exec": "openscad",
+    "units": "in",
+    "model_format": "3mf",
+    "output_folder": "test/wall_height",
+    "flat": true,
+    "dimensions": "2x4x1",
+    "make_square_cups": true,
+    "wall_height_scale:": 0.5
+}

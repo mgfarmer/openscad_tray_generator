@@ -8,5 +8,6 @@
     "custom_layouts_file": "custom_layouts.json",
     "dimensions": "8x3x1 8x2x1",
     "length_div_minimum_size": 1,
-    "flat": false
+    "flat": false,
+    "wall_height_scale:": 0.5
 }

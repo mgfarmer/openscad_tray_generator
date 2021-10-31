@@ -1,13 +1,13 @@
 // Specifies the measurement system and scale you want to use for your trays.  All dimensions below will be in these units.  There are presets called "imperal defaults" and "metric defaults" that make good starting points. 
 Scale_Units = 25.4; // [25.4:inch, 10.0:cm]
 
-// Specifies the tray length in the select unit scale
+// Specifies the external tray length in the select unit scale
 Tray_Length = 4.0; // [1.0:1.0:10.0]
 
-// Specifies the tray width in the select unit scale
+// Specifies the external tray width in the select unit scale
 Tray_Width = 2.0; // [1.0:1.0:10]
 
-// Specifies the tray height in the select unit scale
+// Specifies the external tray height in the select unit scale.  Stackable trays (Interlock Height > 0) will increase the actual height by the height of the interlocking extrusion.
 Tray_Height = 1.0; // [0.0:0.25:8]
 
 // Create a lid for your tray.  (See Lid and Interlock Parameters).
@@ -15,6 +15,18 @@ Create_A_Lid = false;
 
 // Select a build mode, then use the controls in the same named tabs to specify generation parameters
 Build_Mode = "Square_Cups"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
+
+/* [Tray Insert Parameters] */
+
+// Size this tray to fit into a bigger tray.  Tray Length and Width is the size of the tray it will fit into. This tray will be just small enough to rest inside the outer tray. The outer tray should have division walls for the insertr tray to rest on, that are sized down appropriately. See "Insert Tray Heighth". Using this will force the Interlock Height to 0
+Make_Insert_Tray = false;
+
+// Use this to adapt a larger tray to accespt an smaller insert tray. Set this to be the same height as the height of the insert tray. 
+Insert_Tray_Height = 0.0;  // [0.00:0.05:2.00]
+
+// Use this to specify how much free space is between the inner wall of the outer tray and the outer wall of the inner tray. Larger values will create a looser fit.
+Insert_Tray_Gap = 0.03;  // [0.00:0.005:2.00]
+
 
 /* [Square Cups] */
 // If not 0, specifies the size of square cups to be create, both tray_length and tray_width should be a multiple of this value.  If your tray is 8x4 and you use a cup size of 1 you will get 32 cups. 
@@ -46,7 +58,7 @@ Custom_Col_Row_Ratios = [1,5,2,2,2,1.5,2,0,3,0,3,0,3,0,2,0,5];
 Custom_Division_List = [ "-", 0.333, 0.0, 0.666, "-", 0.666, 0.333, 1.0, "|", 0.333, 0.333, 1.0, "|", 0.666, 0.0, 0.666 ];
 //[[ "-", 0.66, [0.0, 0.66]],[ "|", 0.66, [0.66, 1.0]]];
 
-/* [Wall Thickness Parameters] */
+/* [Wall Parameters] */
 // Specifies how thick the outer wall of the tray will be
 Tray_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
 
@@ -97,30 +109,36 @@ Rotate_Handle = 0.0; // [ 0.00 : 45.00 : 180.00]
 // Specifies the height of the interlock panel extruded below the tray (and also the distance that the top of the dividers are below the upper tray edge. Specify 0 for non-interlocking stackers. You can still stack them, they just won't interlock.).
 Interlock_Height = 0.1; // [0.0:0.01:0.25]
 
-// Specifies how far below the top edge of the tray the top edge of the dividers will be.  Only used when Interlock_Height==0.  When Interlock_Height > 0, it is used instead.  (See docs for usage.)
-Interlock_Divider_Wall_Recess = 0.1; // [0.0:0.01:0.25]
+// Specifies how far below the top edge of the tray the top edge of the dividers will be.  Only used when Interlock_Height==0, and intended for use with interlocking lids, recessed lids, or to give a little more recess to insert trays.  When Interlock_Height > 0, it is used instead.
+Interlock_Divider_Wall_Recess = 0.0; // [0.0:0.01:0.25]
 
 // Specifies the gap between the interlock extrusion and the inner face of the outer wall of the tray. Largers values will give a looser fit.
 Interlock_Gap = 0.003;  // [0.0:0.001:0.020]
 
 // Create scaled versions of all user paramters
-scaled_tray_length = Scale_Units * Tray_Length;
-scaled_tray_width = Scale_Units * Tray_Width;
-scaled_tray_height = Scale_Units * Tray_Height;
 scaled_wall_thickness = Scale_Units * Tray_Wall_Thickness;
 scaled_floor_thickness = Scale_Units * Floor_Thickness;
 scaled_divider_thickness = Scale_Units * Divider_Wall_Thickness;
+scaled_Insert_Tray_Gap = Scale_Units * Insert_Tray_Gap;
+scaled_tray_length = (Scale_Units * Tray_Length) - (2*((Make_Insert_Tray==true)?scaled_wall_thickness+scaled_Insert_Tray_Gap:0));
+scaled_tray_width = (Scale_Units * Tray_Width) - (2*((Make_Insert_Tray==true)?scaled_wall_thickness+scaled_Insert_Tray_Gap:0));
+scaled_tray_height = Scale_Units * Tray_Height;
+
 scaled_corner_radius = Scale_Units * Corner_Roundness * Tray_Wall_Thickness; 
 scaled_interlock_gap = Scale_Units * Interlock_Gap;
-scaled_interlock_height = Scale_Units * Interlock_Height;
-scaled_Interlock_Divider_Wall_Recess = Scale_Units * ((Interlock_Height==0)?Interlock_Divider_Wall_Recess:Interlock_Height);
+scaled_interlock_height = (Make_Insert_Tray==true)?0:(Scale_Units * Interlock_Height);
+scaled_Interlock_Divider_Wall_Recess = Scale_Units * ((scaled_interlock_height==0)?Interlock_Divider_Wall_Recess:Interlock_Height);
 scaled_lid_thickness = Scale_Units * Lid_Thickness;
 scaled_Finger_Hole_Position = Scale_Units * Finger_Hole_Position;
 scaled_finger_hole_diameter = Scale_Units * Finger_Hole_Diameter;
 scaled_block_handle_length = Scale_Units * Block_or_Bar_Handle_Length;
 scaled_block_handle_width = Scale_Units * Block_Width_or_Bar_Diameter;
 scaled_block_handle_height = Scale_Units * Block_Handle_Height;
-scaled_divider_height = scaled_tray_height-scaled_Interlock_Divider_Wall_Recess;
+scaled_insert_tray_height = Scale_Units * Insert_Tray_Height;
+scaled_divider_height = scaled_tray_height-scaled_Interlock_Divider_Wall_Recess-scaled_insert_tray_height;
+
+// Scale the wall height down to allow for inserting a smaller tray if desired
+Divider_Wall_Height_Scale = 1.0;  // [0.05:0.01:1.00]
 
 // A function to add up the elements of an vector.
 function add_vect(v, i = 0, r = 0) = i < len(v) ? add_vect(v, i + 1, r + v[i]) : r;
@@ -374,7 +392,7 @@ module make_dividers(divs, height, orient="length", from=0, to=1.0, hscale=1.0) 
 module make_equal_cups(num_divs, height, orient="length", from=0.0, to=1.0) {
     increment = 1.0/num_divs;
     for ( i = [increment : increment : (1.0-increment)] ){
-        make_div(orient, i, height, from, to);
+        make_div(orient, i, height, from, hscale=Divider_Wall_Height_Scale);
     }
 }
 
@@ -390,13 +408,13 @@ module make_walls(section, mode, walls, height, divisions) {
         to = divisions[section+1];
             if (len(walls) > 2 && walls[2] > 0) {
                 ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) walls[1+i] ]);
-                make_cups(ratios, height, mode, from, to);
+                make_cups(ratios, height, mode, from, to, hscale=Divider_Wall_Height_Scale);
                 wall_specs = sub_vect(walls, 2 + walls[1]); 
                 make_walls(section+1, mode, wall_specs, height, divisions);
             }
             else {
                 ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) 1 ]);
-                make_cups(ratios, height, mode, from, to);
+                make_cups(ratios, height, mode, from, to, hscale=Divider_Wall_Height_Scale);
                 wall_specs = sub_vect(walls, 2); 
                 make_walls(section+1, mode, wall_specs, height, divisions);
             }
@@ -409,7 +427,7 @@ module make_custom_div(div_list, height) {
         pos = div_list[1];
         from = div_list[2];
         to = div_list[3];
-        make_div(dir, pos, height, from, to);
+        make_div(dir, pos, height, from, to, hscale=Divider_Wall_Height_Scale);
         next_list = sub_vect(div_list, 4);
         make_custom_div(next_list, height);
     }
@@ -421,17 +439,13 @@ module make_equal_cup_dividers(height) {
 }
 
 module make_lw_cups(height) {
-    if (lcups > 0) {
-        make_equal_cups(Cups_Along_Length, height, "width");
-    }
-    if (wcups > 0) {
-        make_equal_cups(Cups_Along_Width, height, "length");
-    }
+    make_equal_cups(Cups_Along_Length, height, "width");
+    make_equal_cups(Cups_Across_Width, height, "length");
 }
 
 module make_lw_cup_ratios(height) {
-    make_cups(Lengthwise_Cup_Ratios, height, "width");
-    make_cups(Widthwise_Cup_Ratios, height, "length");
+    make_cups(Lengthwise_Cup_Ratios, height, "width", hscale=Divider_Wall_Height_Scale);
+    make_cups(Widthwise_Cup_Ratios, height, "length", hscale=Divider_Wall_Height_Scale);
 }
 
 module make_custom_div_ratios(height) {
@@ -440,14 +454,14 @@ module make_custom_div_ratios(height) {
     divs = Custom_Col_Row_Ratios[1];
     if (Custom_Col_Row_Ratios[2] > 0) {
         ratios = rev_vect([ for( i = [0 : 1 : divs-1]) Custom_Col_Row_Ratios[2+i] ]);
-        make_cups(ratios, height, mode);
+        make_cups(ratios, height, mode, hscale=Divider_Wall_Height_Scale);
         divisions = concat( [0.0], make_normalized_divs(ratios), [1.0]);
         start = 2 + divs;
         wall_specs = sub_vect(Custom_Col_Row_Ratios, start);
         make_walls(0, other_mode, wall_specs, height, divisions);
     }
     else {
-        make_equal_cups(divs, height, mode);
+        make_equal_cups(divs, height, mode, hscale=Divider_Wall_Height_Scale);
         divisions = concat( [0.0], make_normalized_divs([ for( i = [0 : 1 : divs-1]) 1 ]), [1.0]);
         wall_specs = sub_vect(Custom_Col_Row_Ratios, 2);
         make_walls(0, other_mode, wall_specs, height, divisions);
