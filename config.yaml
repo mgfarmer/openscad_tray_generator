@@ -1,14 +1,18 @@
 ---
 units: in
 model_format: 3mf
-output_folder: mytrays
+output_folder: output/mytrays
 flat: false
 generators:
+  knife_tray:
+    file_prefix: none
+    openscad_presets_file: tray_generator.json
+    openscad_preset_names: Knife_Tray_Main Knife_Tray_Insert
   some_trays:
     file_prefix: sq_
     dimensions: 8x3x1 8x2x1
     make_square_cups: true
-    make_divisions: true
+    #make_divisions: true
     length_div_minimum_size: 2
   metric-bolt-trays:
     file_prefix: none

@@ -145,6 +145,8 @@ class MakeTrays:
                 if not os.path.exists(files['folder']):
                     os.makedirs(files['folder'])
                 logging.info("Render:", cmd)
+                debug("command", cmd)
+
                 out = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                     universal_newlines=True)
 
@@ -165,6 +167,7 @@ class MakeTrays:
         if (cmd in self.issued_cmds):
             # Duplicate command generated, no need to do it again.
             return;
+
         force_slice = self.render_object(cmd, files, count_only)
         slice(files, count_only, force_slice)
         self.issued_cmds += [cmd]
@@ -780,7 +783,7 @@ class MakeTrays:
 
     def setup_other_dimensions(self, config):
         config['wall_height_scale'] = self.get_config_value(
-            "wall_height_scale", self.args.wall_height_scale)
+            "wall_height_scale", self.args.wall_height_scale, 1.0)
 
         dims = self.get_config_value("default_dim_in_mm", None)
         if dims:
