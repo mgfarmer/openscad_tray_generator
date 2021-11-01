@@ -791,7 +791,7 @@ class MakeTrays:
                 config['scale_units']
             intr_r = dims.get("interlock_recess", 1.75) / \
                 config['scale_units']
-            intr_g = dims.get("interlock_gap", 1.75) / \
+            intr_g = dims.get("interlock_gap", 0.08) / \
                 config['scale_units']
 
         wall_dims = self.get_config_value(
