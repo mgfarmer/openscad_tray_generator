@@ -72,7 +72,7 @@ Corner_Roundness = 0.5; // [0.00:0.01:1.00]
 // Specifies how thick each internal cup divider will be.
 Divider_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
 
-// Scale the wall height down to allow for inserting a smaller tray if desired
+// Scale the wall height down.
 Divider_Wall_Height_Scale = 1.0;  // [0.05:0.01:1.00]
 
 // Create finger slots in divider walls.
@@ -88,7 +88,10 @@ Finger_Slot_Width = 0.0; // [0.00:0.01:1.00]
 Finger_Slot_Position = 0.5; // [0.00:0.01:1.00]
 
 // Normalized radius where 1=divider wall height, and 0=zero
-Finger_Slot_Radius = 1.0; // [0.00:0.01:1.00]
+Finger_Slot_Radius = 1.0; // [0.00:0.01:4.00]
+
+// Normalized lift of the slot above the floor
+Finger_Slot_Lift = 1.0; // [0.00:0.01:1.00]
 
 /* [Lid Parameters] */
 Lid_Handle_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes", "Block_Handle", "Bar_Handle"]
@@ -509,7 +512,7 @@ module make_tray_cups(height) {
 module make_finger_slots() {
     if (Make_Finger_Slots == true) {
         radius = scaled_divider_height * Divider_Wall_Height_Scale * Finger_Slot_Radius;
-        lift = scaled_divider_height * Divider_Wall_Height_Scale - radius;
+        lift = scaled_divider_height * Divider_Wall_Height_Scale * Finger_Slot_Lift;
         cy_faces = 40;
         union() {
             if (Lengthwise_Finger_Slot == false) {
@@ -522,9 +525,15 @@ module make_finger_slots() {
                     rotate([90,0,0]) {
                         translate([-separation, 0, 0]) {
                             cylinder(height, r=radius, center=true, $fn=cy_faces);
+                            translate([0,scaled_divider_height/2,0]) {
+                                cube([radius*2, scaled_divider_height, height], center=true);
+                            }
                         }
                         translate([separation, 0, 0]) {
                             cylinder(height, r=radius, center=true, $fn=cy_faces);
+                            translate([0,scaled_divider_height/2,0]) {
+                                cube([radius*2, scaled_divider_height, height], center=true);
+                            }
                         }
                     }
                     cube([separation*2, height, radius*2], center=true);
@@ -541,9 +550,15 @@ module make_finger_slots() {
                         rotate([90,0,0]) {
                             translate([-separation, 0, 0]) {
                                 cylinder(height, r=radius, center=true, $fn=cy_faces);
+                                translate([0,scaled_divider_height,0]) {
+                                    #cube([radius*2, scaled_divider_height/2, height], center=true);
+                                }
                             }
                             translate([separation, 0, 0]) {
                                 cylinder(height, r=radius, center=true, $fn=cy_faces);
+                                translate([0,scaled_divider_height,0]) {
+                                    #cube([radius*2, scaled_divider_height/2, height], center=true);
+                                }
                             }
                         }
                         cube([separation*2, height, radius*2], center=true);
