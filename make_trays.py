@@ -507,13 +507,6 @@ class MakeTrays:
         g1.add_argument('--openscad_preset_names', type=str, nargs="+",
                         help="Generate only specified preset(s) from the specified json preset file (see --json)")
 
-        g1.add_argument('--custom_layouts_file', type=str, 
-                        help="Specify a yaml file containing custom layout expressions. Al l layouts will be generated unless (see --custom_layout_names)")
-
-        g1.add_argument('--custom_layout_names', type=str, nargs="+",
-                        help="Generate only specified preset(s) from the specified custom layouts file (see --custom_layouts_file)")
-
-
         g0 = parser.add_argument_group('Generation Control Options')
 
         g0.add_argument('--oscad', type=str, nargs="+",
@@ -740,18 +733,6 @@ class MakeTrays:
         config['custom_layouts_dict'] = self.get_config_value(
             "custom_layouts")
 
-        # if filename and not os.path.exists(filename):
-        #     print(f"Specified custom layout file does not exist: {filename}")
-        #     sys.exit(0)
-
-        # if filename:
-        #     f = open(filename)
-        #     config['custom_layouts_dict'] = yaml.safe_load(f)
-        #     config['custom_layouts_filename'] = filename
-
-        # config['custom_layout_names'] = self.get_config_value(
-        #     "custom_layout_names", self.args.custom_layout_names, asList=True)
-
         # TODO check layout names against those in the file
 
         config['length_div_minimum_size'] = self.get_config_value(
@@ -792,6 +773,8 @@ class MakeTrays:
 
         config['file_prefix'] = self.get_config_value(
             "file_prefix", None, "tray_")
+        if config['file_prefix'] == "none":
+            config['file_prefix'] = ""
 
         return config
 

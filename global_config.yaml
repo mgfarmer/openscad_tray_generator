@@ -1,6 +1,5 @@
 ---
 openscad_exec: openscad
-file_prefix: widget_
 scales:
   in: 25.4
   cm: 10

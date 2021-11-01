@@ -1,24 +1,25 @@
 ---
-openscad_exec: openscad
 units: in
 model_format: 3mf
 output_folder: mytrays
 flat: false
 generators:
   some_trays:
+    file_prefix: sq_
     dimensions: 8x3x1 8x2x1
     make_square_cups: true
     make_divisions: true
     length_div_minimum_size: 2
   metric-bolt-trays:
-      dimensions: 8x4x1 6x3x1
-      custom_layouts:
-        customColRows:
-          M4_Bolt_Layout:
-            Custom_Col_Row_Ratios: "[1, 5, 3, 3, 3, 1.5, 3, 0, 4, 0, 4, 0, 3, 0, 2, 0, 5]"
-          M2_M3_Bolt_Layout:
-            Custom_Col_Row_Ratios: "[1, 5, 2, 2, 2, 1.5, 2, 0, 3, 0, 3, 0, 3, 0, 2, 0, 5]"
-        customDivisions:
-          Four_Chamber_Cross:
-            Custom_Division_List: "[0, 0.333, 0, 0.666, 0, 0.666, 0.333, 1, 1, 0.333, 0.333,
-              1, 1, 0.666, 0, 0.666]"
+    file_prefix: none
+    dimensions: 8x4x1 6x3x1
+    custom_layouts:
+      customColRows:
+        M4_Bolt_Layout:
+          Custom_Col_Row_Ratios: "[1, 5, 3, 3, 3, 1.5, 3, 0, 4, 0, 4, 0, 3, 0, 2, 0, 5]"
+        M2_M3_Bolt_Layout:
+          Custom_Col_Row_Ratios: "[1, 5, 2, 2, 2, 1.5, 2, 0, 3, 0, 3, 0, 3, 0, 2, 0, 5]"
+      customDivisions:
+        Four_Chamber_Cross:
+          Custom_Division_List: "[0, 0.333, 0, 0.666, 0, 0.666, 0.333, 1, 1, 0.333, 0.333,
+            1, 1, 0.666, 0, 0.666]"
