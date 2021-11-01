@@ -34,10 +34,10 @@ Square_Cup_Size = 1; //[1.0:0.5:10]
 
 /* [Length/Width Cups] */
 // This create the specified number of equal length cups along the length of the tray.
-Cups_Along_Length = 1; //[1.0:1.0:10]
+Cups_Along_Length = 1; //[1.0:1.0:20]
 
 // This create the specified number of equal width cups across the width of the tray.
-Cups_Across_Width = 1; //[1.0:1.0:10]
+Cups_Across_Width = 1; //[1.0:1.0:20]
 
 /* [Length/Width Cup Ratios] */
 // This creates cup dividers at the given ratios.  For instance [1,1] makes two equal length divisions, and [1,1,2] makes 2 equal length small divisions and one division that is twice as long.
@@ -58,18 +58,24 @@ Custom_Col_Row_Ratios = [1,5,2,2,2,1.5,2,0,3,0,3,0,3,0,2,0,5];
 Custom_Division_List = [ "-", 0.333, 0.0, 0.666, "-", 0.666, 0.333, 1.0, "|", 0.333, 0.333, 1.0, "|", 0.666, 0.0, 0.666 ];
 //[[ "-", 0.66, [0.0, 0.66]],[ "|", 0.66, [0.66, 1.0]]];
 
-/* [Wall Parameters] */
+/* [Outer Wall Parameters] */
 // Specifies how thick the outer wall of the tray will be
 Tray_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
 
 // Specifies how thick the floor will be.
 Floor_Thickness = 0.07; // [0.05:0.01:0.50]
 
+// Specifies the "roundess" of tray corners Set to 0 for square corners. Set to 1.0 for the most rounding.  This is a ratio of the wall thickness.
+Corner_Roundness = 0.5; // [0.00:0.01:1.00]
+
+/* [Divider Wall Parameters] */
 // Specifies how thick each internal cup divider will be.
 Divider_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
 
-// Specifies the "roundess" of tray corners Set to 0 for square corners. Set to 1.0 for the most rounding.  This is a ratio of the wall thickness.
-Corner_Roundness = 0.5; // [0.00:0.01:1.00]
+// Scale the wall height down to allow for inserting a smaller tray if desired
+Divider_Wall_Height_Scale = 1.0;  // [0.05:0.01:1.00]
+
+
 
 /* [Lid Parameters] */
 Lid_Handle_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes", "Block_Handle", "Bar_Handle"]
@@ -136,9 +142,6 @@ scaled_block_handle_width = Scale_Units * Block_Width_or_Bar_Diameter;
 scaled_block_handle_height = Scale_Units * Block_Handle_Height;
 scaled_insert_tray_height = Scale_Units * Insert_Tray_Height;
 scaled_divider_height = scaled_tray_height-scaled_Interlock_Divider_Wall_Recess-scaled_insert_tray_height;
-
-// Scale the wall height down to allow for inserting a smaller tray if desired
-Divider_Wall_Height_Scale = 1.0;  // [0.05:0.01:1.00]
 
 // A function to add up the elements of an vector.
 function add_vect(v, i = 0, r = 0) = i < len(v) ? add_vect(v, i + 1, r + v[i]) : r;
@@ -209,7 +212,7 @@ module make_l_div(pos, height, from=0, to=1.0, hscale=1.0) {
     // from is a normalized start point, default 0.0 is one wall
     // end is a normalized end point, default 1.0 is the other wall
     // hscale can be used to scale the height of the division wall
-    wid = scaled_tray_width-(scaled_divider_thickness);
+    wid = scaled_tray_width;
     wpos = (wid*pos) - (wid/2);
     _length = (scaled_tray_length - scaled_wall_thickness);
     lstart = (_length*from) - (_length/2);
@@ -238,7 +241,7 @@ module make_w_div(pos, height, from=0, to=1.0, hscale=1.0) {
     // from is a normalized start point, default 0.0 is one wall
     // end is a normalized end point, default 1.0 is the other wall
     // hscale can be used to scale the height of the division wall
-    llen = scaled_tray_length-scaled_divider_thickness;
+    llen = scaled_tray_length;
     lpos = (llen*pos) - (llen/2);
     _length = scaled_tray_width - scaled_wall_thickness;
     wstart = (_length*from) - (_length/2);
@@ -323,7 +326,7 @@ module make_lid() {
         // Create subtractive handles, if specified.
         if (Lid_Handle_Style == "Finger_Holes") {
             rotate([0,0,Rotate_Handle]) {
-                height = scaled_lid_thickness+scaled_interlock_height*4;
+                height = (scaled_lid_thickness+scaled_interlock_height)*8;
                 hole_offset = scaled_tray_length/2 * Finger_Hole_Position;
                 translate ([hole_offset, 0, 0]) {
                     if (Finger_Hole_Style == "Round") {
@@ -490,6 +493,56 @@ module make_tray_cups(height) {
     }
 }
 
+module make_finger_slots() {
+    Lengthwise_Finger_Slot = true;
+    Finger_Slot_Width = 0.;
+    Finger_Slot_Position = 0.5;
+    radius = scaled_divider_height * Divider_Wall_Height_Scale;
+    cy_faces = 40;
+    union() {
+        if (Lengthwise_Finger_Slot == true) {
+            separation = Finger_Slot_Width * (((scaled_tray_length - scaled_wall_thickness*2))/2 - radius);
+            cut_width = (separation/2);
+            echo("separation",separation);
+            echo("cut_width",cut_width);
+            mult = (Finger_Slot_Position-0.5) < 0?1:-1;
+            position = (Finger_Slot_Position-0.5) * (scaled_tray_length - 2*scaled_wall_thickness + (mult*radius));
+            echo("position",position);
+            height = (scaled_tray_width)-(3*scaled_wall_thickness);
+            translate ([position, 0, radius + scaled_floor_thickness]) {
+                rotate([90,0,0]) {
+                    translate([-separation, 0, 0]) {
+                        #cylinder(height, r=radius, center=true, $fn=cy_faces);
+                    }
+                    translate([separation, 0, 0]) {
+                        #cylinder(height, r=radius, center=true, $fn=cy_faces);
+                    }
+                }
+                #cube([separation*2, height, radius*2], center=true);
+            }
+        }
+        else {
+            separation = Finger_Slot_Width * ((scaled_tray_width - scaled_wall_thickness*2))/2 - radius;
+            height = (scaled_tray_length)-(3*scaled_wall_thickness);
+            position = 0;
+            translate ([0, position, radius + scaled_floor_thickness]) {
+                rotate([0,0,90]) {
+                    rotate([90,0,0]) {
+                        translate([-separation, 0, 0]) {
+                            cylinder(height, r=radius, center=true, $fn=cy_faces);
+                        }
+                        translate([separation, 0, 0]) {
+                            cylinder(height, r=radius, center=true, $fn=cy_faces);
+                        }
+                    }
+                    cube([separation*2, height, radius*2], center=true);
+                }
+            }
+        }
+    }
+}
+
+
 echo(Build_Mode)
 if (Build_Mode == "Just_the_Tray") {
     make_tray();
@@ -498,10 +551,13 @@ else if (Build_Mode == "Tray_Lid") {
     make_lid();
 }
 else {
-    union() {
-        make_tray();
-        make_tray_cups(scaled_divider_height);
-    }
+    difference() {
+        union() {
+            make_tray();
+            make_tray_cups(scaled_divider_height);
+        }
+        make_finger_slots();
+    }    
 }
 
 if (Build_Mode != "Tray_Lid" && Create_A_Lid == true) {
