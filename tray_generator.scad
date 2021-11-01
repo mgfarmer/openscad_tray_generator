@@ -21,10 +21,10 @@ Build_Mode = "Square_Cups"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cu
 // Size this tray to fit into a bigger tray.  Tray Length and Width is the size of the tray it will fit into. This tray will be just small enough to rest inside the outer tray. The outer tray should have division walls for the insertr tray to rest on, that are sized down appropriately. See "Insert Tray Heighth". Using this will force the Interlock Height to 0
 Make_Insert_Tray = false;
 
-// Use this to adapt a larger tray to accespt an smaller insert tray. Set this to be the same height as the height of the insert tray. 
+// Apply this to the main tray.  Use this to adapt a larger tray to accespt an smaller insert tray. Set this to be the same height as the height of the insert tray. 
 Insert_Tray_Height = 0.0;  // [0.00:0.05:2.00]
 
-// Use this to specify how much free space is between the inner wall of the outer tray and the outer wall of the inner tray. Larger values will create a looser fit.
+// Apply this to the insert tray. Use this to specify how much free space is between the inner wall of the outer tray and the outer wall of the inner tray. Larger values will create a looser fit.
 Insert_Tray_Gap = 0.03;  // [0.00:0.005:2.00]
 
 
@@ -87,6 +87,8 @@ Finger_Slot_Width = 0.0; // [0.00:0.01:1.00]
 // Normalized position for the finger slots.
 Finger_Slot_Position = 0.5; // [0.00:0.01:1.00]
 
+// Normalized radius where 1=divider wall height, and 0=zero
+Finger_Slot_Radius = 1.0; // [0.00:0.01:1.00]
 
 /* [Lid Parameters] */
 Lid_Handle_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes", "Block_Handle", "Bar_Handle"]
@@ -506,16 +508,17 @@ module make_tray_cups(height) {
 
 module make_finger_slots() {
     if (Make_Finger_Slots == true) {
-        radius = scaled_divider_height * Divider_Wall_Height_Scale;
+        radius = scaled_divider_height * Divider_Wall_Height_Scale * Finger_Slot_Radius;
+        lift = scaled_divider_height * Divider_Wall_Height_Scale - radius;
         cy_faces = 40;
         union() {
-            if (Lengthwise_Finger_Slot == true) {
+            if (Lengthwise_Finger_Slot == false) {
                 separation = Finger_Slot_Width * (((scaled_tray_length - scaled_wall_thickness*2))/2 - radius);
                 cut_width = (2*(separation+radius));
                 scl = (Finger_Slot_Position - 0.5)*2;
                 position = scl * (scaled_tray_length - 2*scaled_wall_thickness - cut_width)/2;
                 height = (scaled_tray_width)-(3*scaled_wall_thickness);
-                translate ([position, 0, radius + scaled_floor_thickness]) {
+                translate ([position, 0, radius + scaled_floor_thickness + lift]) {
                     rotate([90,0,0]) {
                         translate([-separation, 0, 0]) {
                             cylinder(height, r=radius, center=true, $fn=cy_faces);
@@ -533,7 +536,7 @@ module make_finger_slots() {
                 scl = (Finger_Slot_Position - 0.5)*2;
                 position = scl * (scaled_tray_width - 2*scaled_wall_thickness - cut_width)/2;
                 height = (scaled_tray_length)-(3*scaled_wall_thickness);
-                translate ([0, position, radius + scaled_floor_thickness]) {
+                translate ([0, position, radius + scaled_floor_thickness + lift]) {
                     rotate([0,0,90]) {
                         rotate([90,0,0]) {
                             translate([-separation, 0, 0]) {
