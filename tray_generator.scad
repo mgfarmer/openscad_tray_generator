@@ -75,6 +75,17 @@ Divider_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
 // Scale the wall height down to allow for inserting a smaller tray if desired
 Divider_Wall_Height_Scale = 1.0;  // [0.05:0.01:1.00]
 
+// Create finger slots in divider walls.
+Make_Finger_Slots = false;
+
+// Finger slots cut length-wise walls, or width-wise walls
+Lengthwise_Finger_Slot = true;
+
+// Width of the finger slots.
+Finger_Slot_Width = 0.0; // [0.00:0.01:1.00]
+
+// Normalized position for the finger slots.
+Finger_Slot_Position = 0.5; // [0.00:0.01:1.00]
 
 
 /* [Lid Parameters] */
@@ -494,39 +505,17 @@ module make_tray_cups(height) {
 }
 
 module make_finger_slots() {
-    Lengthwise_Finger_Slot = true;
-    Finger_Slot_Width = 0.;
-    Finger_Slot_Position = 0.5;
-    radius = scaled_divider_height * Divider_Wall_Height_Scale;
-    cy_faces = 40;
-    union() {
-        if (Lengthwise_Finger_Slot == true) {
-            separation = Finger_Slot_Width * (((scaled_tray_length - scaled_wall_thickness*2))/2 - radius);
-            cut_width = (separation/2);
-            echo("separation",separation);
-            echo("cut_width",cut_width);
-            mult = (Finger_Slot_Position-0.5) < 0?1:-1;
-            position = (Finger_Slot_Position-0.5) * (scaled_tray_length - 2*scaled_wall_thickness + (mult*radius));
-            echo("position",position);
-            height = (scaled_tray_width)-(3*scaled_wall_thickness);
-            translate ([position, 0, radius + scaled_floor_thickness]) {
-                rotate([90,0,0]) {
-                    translate([-separation, 0, 0]) {
-                        #cylinder(height, r=radius, center=true, $fn=cy_faces);
-                    }
-                    translate([separation, 0, 0]) {
-                        #cylinder(height, r=radius, center=true, $fn=cy_faces);
-                    }
-                }
-                #cube([separation*2, height, radius*2], center=true);
-            }
-        }
-        else {
-            separation = Finger_Slot_Width * ((scaled_tray_width - scaled_wall_thickness*2))/2 - radius;
-            height = (scaled_tray_length)-(3*scaled_wall_thickness);
-            position = 0;
-            translate ([0, position, radius + scaled_floor_thickness]) {
-                rotate([0,0,90]) {
+    if (Make_Finger_Slots == true) {
+        radius = scaled_divider_height * Divider_Wall_Height_Scale;
+        cy_faces = 40;
+        union() {
+            if (Lengthwise_Finger_Slot == true) {
+                separation = Finger_Slot_Width * (((scaled_tray_length - scaled_wall_thickness*2))/2 - radius);
+                cut_width = (2*(separation+radius));
+                scl = (Finger_Slot_Position - 0.5)*2;
+                position = scl * (scaled_tray_length - 2*scaled_wall_thickness - cut_width)/2;
+                height = (scaled_tray_width)-(3*scaled_wall_thickness);
+                translate ([position, 0, radius + scaled_floor_thickness]) {
                     rotate([90,0,0]) {
                         translate([-separation, 0, 0]) {
                             cylinder(height, r=radius, center=true, $fn=cy_faces);
@@ -536,6 +525,26 @@ module make_finger_slots() {
                         }
                     }
                     cube([separation*2, height, radius*2], center=true);
+                }
+            }
+            else {
+                separation = Finger_Slot_Width * (((scaled_tray_width - scaled_wall_thickness*2))/2 - radius);
+                cut_width = (2*(separation+radius));
+                scl = (Finger_Slot_Position - 0.5)*2;
+                position = scl * (scaled_tray_width - 2*scaled_wall_thickness - cut_width)/2;
+                height = (scaled_tray_length)-(3*scaled_wall_thickness);
+                translate ([0, position, radius + scaled_floor_thickness]) {
+                    rotate([0,0,90]) {
+                        rotate([90,0,0]) {
+                            translate([-separation, 0, 0]) {
+                                cylinder(height, r=radius, center=true, $fn=cy_faces);
+                            }
+                            translate([separation, 0, 0]) {
+                                cylinder(height, r=radius, center=true, $fn=cy_faces);
+                            }
+                        }
+                        cube([separation*2, height, radius*2], center=true);
+                    }
                 }
             }
         }
