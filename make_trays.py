@@ -1317,7 +1317,6 @@ def get_oscad_variables():
                 if m:
                     oscad_variables["list"] += [m.group(1)]
                     oscad_variables["options"][m.group(1)] = ["true", "false"]
-                    print(m.group(2))
                     continue
 
                 m = pattern.match(line)
