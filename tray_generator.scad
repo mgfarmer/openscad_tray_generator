@@ -133,6 +133,10 @@ Interlock_Divider_Wall_Recess = 0.0; // [0.0:0.01:0.25]
 // Specifies the gap between the interlock extrusion and the inner face of the outer wall of the tray. Largers values will give a looser fit.
 Interlock_Gap = 0.003;  // [0.0:0.001:0.020]
 
+// Make sure all variables for the customizer are declared above this line.  Other globals can be put below
+// this line to ensure they don't show up in the customizer UI.
+module __Customizer_Limit__ () {}
+
 // Create scaled versions of all user paramters
 scaled_wall_thickness = Scale_Units * Tray_Wall_Thickness;
 scaled_floor_thickness = Scale_Units * Floor_Thickness;

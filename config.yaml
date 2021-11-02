@@ -10,6 +10,7 @@ generators:
     openscad_preset_names: Knife_Tray_Main Knife_Tray_Insert
   tray_with_insert_main:
     output_subfolder: knife_tray
+    file_prefix: blade_storage_
     dimensions: 8x4x2
     interlock_dimensions: 0.0 0.0 0.0
     other_oscad_params: >
@@ -18,12 +19,12 @@ generators:
       Insert_Tray_Height=0.75
   tray_insert:
     output_subfolder: knife_tray
-    file_prefix: insert_
+    file_prefix: none
     dimensions: 8x4x0.75
     interlock_dimensions: 0.0 0.0 0.0
     custom_layouts:
       customColRows:
-        knife_holder:
+        knife_holder_insert:
           Custom_Col_Row_Ratios: "[1, 2, 1, 7, 0, 1, 0, 6]"
     other_oscad_params: >
       Make_Insert_Tray=true

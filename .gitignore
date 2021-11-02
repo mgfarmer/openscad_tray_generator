@@ -1,3 +1,4 @@
 *.pyc
 output/
 *.3mf
+.venv/
