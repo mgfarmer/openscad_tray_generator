@@ -62,6 +62,8 @@ class MakeTrays:
         # Then the thickness parameters, which are computed from the unit base
         cmd += generator['wall_defs']
 
+        cmd += generator['other_oscad_params']
+
         cmd += ["-D", f"Scale_Units={generator['scale_units']}"]
 
         # Then the primary object dimensions, global to all objects
@@ -707,6 +709,7 @@ class MakeTrays:
 
         self.determine_units(config)
         self.setup_other_dimensions(config)
+        self.setup_other_params(config)
 
         config['openscad_presets_dict'] = None
         filename = self.get_config_value(
@@ -780,6 +783,16 @@ class MakeTrays:
             config['file_prefix'] = ""
 
         return config
+
+    def setup_other_params(self, config):
+        other = self.get_config_value(
+            "other_oscad_params", default=[], asList=True)
+        
+        params = []
+        for param in other:
+            params += ['-D', param]
+        
+        config['other_oscad_params'] = params
 
     def setup_other_dimensions(self, config):
         config['wall_height_scale'] = self.get_config_value(

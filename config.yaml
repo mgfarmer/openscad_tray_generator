@@ -14,6 +14,7 @@ generators:
     make_square_cups: true
     #make_divisions: true
     length_div_minimum_size: 2
+    #other_oscad_params: Create_A_Lid=true
   metric-bolt-trays:
     file_prefix: none
     dimensions: 8x4x1 6x3x1

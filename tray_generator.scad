@@ -1,4 +1,4 @@
-// Specifies the measurement system and scale you want to use for your trays.  All dimensions below will be in these units.  There are presets called "imperal defaults" and "metric defaults" that make good starting points. 
+//// Specifies the measurement system and scale you want to use for your trays.  All dimensions below will be in these units.  There are presets called "imperal defaults" and "metric defaults" that make good starting points. 
 Scale_Units = 25.4; // [25.4:inch, 10.0:cm]
 
 // Specifies the external tray length in the select unit scale
@@ -27,10 +27,15 @@ Insert_Tray_Height = 0.0;  // [0.00:0.05:2.00]
 // Apply this to the insert tray. Use this to specify how much free space is between the inner wall of the outer tray and the outer wall of the inner tray. Larger values will create a looser fit.
 Insert_Tray_Gap = 0.03;  // [0.00:0.005:2.00]
 
+// Corner posts give the insert something to rest on if you don't want any dividers walls in the main tray.
+Add_Corner_Posts = false;
+
+// Size of the corner post
+Corner_Post_Size = 0.2; //[0.1:0.05:0.5]
 
 /* [Square Cups] */
 // If not 0, specifies the size of square cups to be create, both tray_length and tray_width should be a multiple of this value.  If your tray is 8x4 and you use a cup size of 1 you will get 32 cups. 
-Square_Cup_Size = 1; //[1.0:0.5:10]
+Square_Cup_Size = 1; //[0.10:0.5:10]
 
 /* [Length/Width Cups] */
 // This create the specified number of equal length cups along the length of the tray.
@@ -145,6 +150,8 @@ scaled_lid_thickness = Scale_Units * Lid_Thickness;
 scaled_finger_hole_diameter = Scale_Units * Finger_Hole_Diameter;
 scaled_insert_tray_height = Scale_Units * Insert_Tray_Height;
 scaled_divider_height = scaled_tray_height-scaled_Interlock_Divider_Wall_Recess-scaled_insert_tray_height;
+
+scaled_corner_post_size = Scale_Units * Corner_Post_Size;
 
 // A function to add up the elements of an vector.
 function add_vect(v, i = 0, r = 0) = i < len(v) ? add_vect(v, i + 1, r + v[i]) : r;
@@ -473,6 +480,47 @@ module make_custom_div_ratios(height) {
     }
 }
 
+module make_post(height, radius) {
+    union() {
+        cylinder(height, r=radius, $fn=20);
+        translate([0,-radius,0]) {
+            cube([scaled_corner_post_size/2, scaled_corner_post_size, height]);
+        }
+        translate([-radius,0,0]) {
+            cube([scaled_corner_post_size, scaled_corner_post_size/2, height]);
+        }
+    }
+}
+
+module make_corner_posts(height) {
+    echo("make_corner_posts");
+    internal_length_offset = (scaled_tray_length - (2*scaled_wall_thickness))/2 - scaled_corner_post_size/2;
+    internal_width_offset = (scaled_tray_width - (2*scaled_wall_thickness))/2 - scaled_corner_post_size/2;
+    radius = scaled_corner_post_size/2;
+    echo("height", height, "post_size", scaled_corner_post_size)
+    translate([internal_length_offset,internal_width_offset,0]) {
+        rotate([0,0,0]) {
+            make_post(height,radius);
+        }   
+    }
+    translate([internal_length_offset,-internal_width_offset,0]) {
+        rotate([0,0,-90]) {
+            make_post(height,radius);
+        }   
+    }
+    translate([-internal_length_offset,-internal_width_offset,0]) {
+        rotate([0,0,180]) {
+            make_post(height,radius);
+        }   
+    }
+    translate([-internal_length_offset,internal_width_offset,0]) {
+        rotate([0,0,90]) {
+            make_post(height,radius);
+        }   
+    }
+
+}
+
 module make_tray_cups(height) {
     if (Build_Mode == "Square_Cups") {
         make_equal_cup_dividers(height);
@@ -492,6 +540,10 @@ module make_tray_cups(height) {
 
     if (Build_Mode == "Custom_Ratio_Divisions") {
         make_custom_div(Custom_Division_List, height);
+    }
+
+    if (Add_Corner_Posts == true) {
+        make_corner_posts(height);
     }
 }
 
@@ -563,6 +615,10 @@ module make_finger_slots() {
 echo(Build_Mode)
 if (Build_Mode == "Just_the_Tray") {
     make_tray();
+    if (Add_Corner_Posts == true) {
+        echo("scaled_divider_height",scaled_divider_height)
+        make_corner_posts(scaled_divider_height);
+    }
 }
 else if (Build_Mode == "Tray_Lid") {
     make_lid();
