@@ -9,7 +9,7 @@ generators:
     openscad_presets_file: tray_generator.json
     openscad_preset_names: Knife_Tray_Main Knife_Tray_Insert
   some_trays:
-    file_prefix: sq_
+    file_prefix: tray_
     dimensions: 8x3x1 8x2x1
     make_square_cups: true
     #make_divisions: true

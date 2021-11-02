@@ -2,10 +2,10 @@
 Scale_Units = 25.4; // [25.4:inch, 10.0:cm]
 
 // Specifies the external tray length in the select unit scale
-Tray_Length = 4.0; // [1.0:1.0:10.0]
+Tray_Length = 8.0; // [1.0:1.0:10.0]
 
 // Specifies the external tray width in the select unit scale
-Tray_Width = 2.0; // [1.0:1.0:10]
+Tray_Width = 4.0; // [1.0:1.0:10]
 
 // Specifies the external tray height in the select unit scale.  Stackable trays (Interlock Height > 0) will increase the actual height by the height of the interlocking extrusion.
 Tray_Height = 1.0; // [0.0:0.25:8]
@@ -14,7 +14,7 @@ Tray_Height = 1.0; // [0.0:0.25:8]
 Create_A_Lid = false;
 
 // Select a build mode, then use the controls in the same named tabs to specify generation parameters
-Build_Mode = "Square_Cups"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
+Build_Mode = "Just_the_Tray"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
 
 /* [Tray Insert Parameters] */
 
@@ -94,7 +94,7 @@ Finger_Slot_Radius = 1.0; // [0.00:0.01:4.00]
 Finger_Slot_Lift = 1.0; // [0.00:0.01:1.00]
 
 /* [Lid Parameters] */
-Lid_Handle_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes", "Block_Handle", "Bar_Handle"]
+Lid_Handle_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes"]
 
 // How thick should the lid be.  This is the height above the top edge of the tray.  If you want a fully recessed lid, specify 0 here.
 Lid_Thickness = 0.07; // [0.00:0.01:0.50]
@@ -107,29 +107,20 @@ Label_Lid = false;
 
 Number_Of_Finger_Holes = 1; // [1, 2]
 
-Finger_Hole_Style = "Square"; // ["Square", "Round", "Diamond"]
+Finger_Hole_Style = "Round"; // ["Square", "Round", "Diamond"]
 
 // Normalized length-wise position from the center of the tray to the finger hole(s). 0 will put the hole(s) in the center. 1.0 will center the hole on the outside of the edge.
-Finger_Hole_Position = .75; // [0.0:0.01:1.0]
+Finger_Hole_Position = 1.0; // [0.0:0.01:1.0]
 
 // Make them big enough for your fingers
-Finger_Hole_Diameter = 0.7; // [0.5:0.05:2.5]
-
-// The Heght of the handle, above the lid surface.
-Block_Handle_Height = 0.375; // [0.25:0.005:1.5]
-
-// The length of the handle
-Block_or_Bar_Handle_Length = 1.0; // [0.5:0.25:5.0]
-
-//The width of the block handle, or the diameter of the bar handle.
-Block_Width_or_Bar_Diameter = 0.25; // [0.25:0.05:5.0]
+Finger_Hole_Diameter = 0.75; // [0.5:0.05:2.5]
 
 // Rotate the handle around the center point of the lid.
 Rotate_Handle = 0.0; // [ 0.00 : 45.00 : 180.00]
 
 /* [Interlocking Parameters] */
 // Specifies the height of the interlock panel extruded below the tray (and also the distance that the top of the dividers are below the upper tray edge. Specify 0 for non-interlocking stackers. You can still stack them, they just won't interlock.).
-Interlock_Height = 0.1; // [0.0:0.01:0.25]
+Interlock_Height = 0.05; // [0.0:0.01:0.25]
 
 // Specifies how far below the top edge of the tray the top edge of the dividers will be.  Only used when Interlock_Height==0, and intended for use with interlocking lids, recessed lids, or to give a little more recess to insert trays.  When Interlock_Height > 0, it is used instead.
 Interlock_Divider_Wall_Recess = 0.0; // [0.0:0.01:0.25]
@@ -151,11 +142,7 @@ scaled_interlock_gap = Scale_Units * Interlock_Gap;
 scaled_interlock_height = (Make_Insert_Tray==true)?0:(Scale_Units * Interlock_Height);
 scaled_Interlock_Divider_Wall_Recess = Scale_Units * ((scaled_interlock_height==0)?Interlock_Divider_Wall_Recess:Interlock_Height);
 scaled_lid_thickness = Scale_Units * Lid_Thickness;
-scaled_Finger_Hole_Position = Scale_Units * Finger_Hole_Position;
 scaled_finger_hole_diameter = Scale_Units * Finger_Hole_Diameter;
-scaled_block_handle_length = Scale_Units * Block_or_Bar_Handle_Length;
-scaled_block_handle_width = Scale_Units * Block_Width_or_Bar_Diameter;
-scaled_block_handle_height = Scale_Units * Block_Handle_Height;
 scaled_insert_tray_height = Scale_Units * Insert_Tray_Height;
 scaled_divider_height = scaled_tray_height-scaled_Interlock_Divider_Wall_Recess-scaled_insert_tray_height;
 
@@ -291,74 +278,58 @@ module make_div(dir, pos, height, from=0, to=1.0, hscale=1.0) {
 }
 
 module make_lid() {
-    difference() {
-        union() {
-            label_div_offset = (Label_Lid == true)?0.2:0.0;
-            // Create the part of the lid above the tray edge.
-            if (scaled_lid_thickness > 0) {
-                translate([0,0,scaled_lid_thickness/2]) {
-                    mkshell(scaled_tray_length, scaled_tray_width, scaled_lid_thickness, scaled_wall_thickness, scaled_corner_radius); 
-                };
-            }
-            if (scaled_interlock_height > 0) {
-                // Create the part of the lid recessed below the tray edge.
-                translate([0,0, -scaled_interlock_height/2+0.001]) {
-                    mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height, 
-                    scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
+    label_div_offset = (Label_Lid == true)?0.2:0.0;
+    rotate([0,0,0]) {
+        difference() {
+            union() {
+                // Create the part of the lid above the tray edge.
+                if (scaled_lid_thickness > 0) {
+                    translate([0,0,scaled_lid_thickness/2]) {
+                        mkshell(scaled_tray_length, scaled_tray_width, scaled_lid_thickness, scaled_wall_thickness, scaled_corner_radius); 
+                    };
                 }
-            }
-            if (Interlocking_Lid == true && scaled_lid_thickness > 0) {
-                // Create a raised edge so a tray placed on top of this tray will stack interlocked.
-                translate([0,0,(scaled_lid_thickness+scaled_interlock_height/2)-0.001]) {
-                    difference() {
-                        mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+label_div_offset+0.001, scaled_wall_thickness, scaled_corner_radius); 
-                        mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+label_div_offset+0.1, 
+                if (scaled_interlock_height > 0) {
+                    // Create the part of the lid recessed below the tray edge.
+                    translate([0,0, -scaled_interlock_height/2+0.001]) {
+                        mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height, 
                         scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
+                        // difference() {
+                        //     mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height, 
+                        //     scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
+                        //     mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+0.002, 
+                        //     scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap+scaled_wall_thickness*2);
+                        // }
                     }
                 }
+                if (Interlocking_Lid == true && scaled_lid_thickness > 0) {
+                    // Create a raised edge so a tray placed on top of this tray will stack interlocked.
+                    translate([0,0,(scaled_lid_thickness+scaled_interlock_height/2)-0.001]) {
+                        difference() {
+                            mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+label_div_offset+0.001, scaled_wall_thickness, scaled_corner_radius); 
+                            mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+label_div_offset+0.1, 
+                            scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
+                        }
+                    }
+                }
+                // if (Label_Lid == true) {
+                //     translate([0,0,scaled_lid_thickness-0.001]) {
+                //         make_tray_cups(label_div_offset);
+                //     }
+                // }
             }
+
             if (Label_Lid == true) {
-                translate([0,0,scaled_lid_thickness-0.001]) {
-                    make_tray_cups(label_div_offset);
+                translate([0,0,scaled_lid_thickness-0.5]) {
+                    make_tray_cups(10);
                 }
             }
 
-            // Create additive handles, if specified.
-            rotate([0,0,Rotate_Handle]) {
-                if (Lid_Handle_Style == "Block_Handle") {
-                    translate([0,0, scaled_lid_thickness+scaled_block_handle_height/2 - 0.001]) {
-                        cube([scaled_block_handle_length, scaled_block_handle_width, scaled_block_handle_height], center=true);
-                    }
-                }
-                if (Lid_Handle_Style == "Bar_Handle") {
-                    translate([0,0, (scaled_lid_thickness + scaled_block_handle_width)/2]) {
-                        rotate([0,90,0]) {
-                            cylinder(scaled_block_handle_length, r=scaled_block_handle_width/2, center=true);
-                        }
-                    }
-                }
-            }
-        }
-        // Create subtractive handles, if specified.
-        if (Lid_Handle_Style == "Finger_Holes") {
-            rotate([0,0,Rotate_Handle]) {
-                height = (scaled_lid_thickness+scaled_interlock_height)*8;
-                hole_offset = scaled_tray_length/2 * Finger_Hole_Position;
-                translate ([hole_offset, 0, 0]) {
-                    if (Finger_Hole_Style == "Round") {
-                        cylinder(height, r=scaled_finger_hole_diameter/2, center=true);
-                    }
-                    if (Finger_Hole_Style == "Square") {
-                        cube([scaled_finger_hole_diameter, scaled_finger_hole_diameter, height], center=true);
-                    }
-                    if (Finger_Hole_Style == "Diamond") {
-                        rotate([0,0,45]) {
-                            cube([scaled_finger_hole_diameter, scaled_finger_hole_diameter, height], center=true);
-                        }
-                    }
-                }
-                if (Number_Of_Finger_Holes == 2) {
-                    translate ([-hole_offset, 0, 0]) {
+            // Create subtractive handles, if specified.
+            if (Lid_Handle_Style == "Finger_Holes") {
+                rotate([0,0,Rotate_Handle]) {
+                    height = (scaled_lid_thickness+scaled_interlock_height)*8;
+                    hole_offset = scaled_tray_length/2 * Finger_Hole_Position;
+                    translate ([hole_offset, 0, 0]) {
                         if (Finger_Hole_Style == "Round") {
                             cylinder(height, r=scaled_finger_hole_diameter/2, center=true);
                         }
@@ -368,6 +339,21 @@ module make_lid() {
                         if (Finger_Hole_Style == "Diamond") {
                             rotate([0,0,45]) {
                                 cube([scaled_finger_hole_diameter, scaled_finger_hole_diameter, height], center=true);
+                            }
+                        }
+                    }
+                    if (Number_Of_Finger_Holes == 2) {
+                        translate ([-hole_offset, 0, 0]) {
+                            if (Finger_Hole_Style == "Round") {
+                                cylinder(height, r=scaled_finger_hole_diameter/2, center=true);
+                            }
+                            if (Finger_Hole_Style == "Square") {
+                                cube([scaled_finger_hole_diameter, scaled_finger_hole_diameter, height], center=true);
+                            }
+                            if (Finger_Hole_Style == "Diamond") {
+                                rotate([0,0,45]) {
+                                    cube([scaled_finger_hole_diameter, scaled_finger_hole_diameter, height], center=true);
+                                }
                             }
                         }
                     }
@@ -529,10 +515,12 @@ module make_finger_slots() {
                                 cube([radius*2, scaled_divider_height, height], center=true);
                             }
                         }
-                        translate([separation, 0, 0]) {
-                            cylinder(height, r=radius, center=true, $fn=cy_faces);
-                            translate([0,scaled_divider_height/2,0]) {
-                                cube([radius*2, scaled_divider_height, height], center=true);
+                        if (separation > 0) {
+                            translate([separation, 0, 0]) {
+                                cylinder(height, r=radius, center=true, $fn=cy_faces);
+                                translate([0,scaled_divider_height/2,0]) {
+                                    cube([radius*2, scaled_divider_height, height], center=true);
+                                }
                             }
                         }
                     }
@@ -550,14 +538,16 @@ module make_finger_slots() {
                         rotate([90,0,0]) {
                             translate([-separation, 0, 0]) {
                                 cylinder(height, r=radius, center=true, $fn=cy_faces);
-                                translate([0,scaled_divider_height,0]) {
-                                    #cube([radius*2, scaled_divider_height/2, height], center=true);
+                                translate([0,scaled_divider_height/2,0]) {
+                                    cube([radius*2, scaled_divider_height, height], center=true);
                                 }
                             }
-                            translate([separation, 0, 0]) {
-                                cylinder(height, r=radius, center=true, $fn=cy_faces);
-                                translate([0,scaled_divider_height,0]) {
-                                    #cube([radius*2, scaled_divider_height/2, height], center=true);
+                            if (separation > 0) {
+                                translate([separation, 0, 0]) {
+                                    cylinder(height, r=radius, center=true, $fn=cy_faces);
+                                    translate([0,scaled_divider_height/2,0]) {
+                                        cube([radius*2, scaled_divider_height, height], center=true);
+                                    }
                                 }
                             }
                         }
