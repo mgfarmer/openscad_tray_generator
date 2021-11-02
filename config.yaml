@@ -8,12 +8,42 @@ generators:
     file_prefix: none
     openscad_presets_file: tray_generator.json
     openscad_preset_names: Knife_Tray_Main Knife_Tray_Insert
+  tray_with_insert_main:
+    output_subfolder: knife_tray
+    dimensions: 8x4x2
+    interlock_dimensions: 0.0 0.0 0.0
+    other_oscad_params: >
+      Add_Corner_Posts=true
+      Corner_Post_Size=0.25
+      Insert_Tray_Height=0.75
+  tray_insert:
+    output_subfolder: knife_tray
+    file_prefix: insert_
+    dimensions: 8x4x0.75
+    interlock_dimensions: 0.0 0.0 0.0
+    custom_layouts:
+      customColRows:
+        knife_holder:
+          Custom_Col_Row_Ratios: "[1, 2, 1, 7, 0, 1, 0, 6]"
+    other_oscad_params: >
+      Make_Insert_Tray=true
+      Insert_Tray_Gap=0.03
+      Divider_Wall_Height_Scale=0.65
+      Make_Finger_Slots=true
+      Finger_Slot_Position=0.77
+      Finger_Slot_Lift=0.15
+      Finger_Slot_Radius=2.0
+      Lengthwise_Finger_Slot=false
   some_trays:
     file_prefix: tray_
     dimensions: 8x3x1 8x2x1
     make_square_cups: true
     #make_divisions: true
     length_div_minimum_size: 2
+    # Other OpenSCAD controls you can add:
+    # Add_Cornert_Post=true
+    # Corner_Post_Size=<size in units>
+
     #other_oscad_params: Create_A_Lid=true
   metric-bolt-trays:
     file_prefix: none

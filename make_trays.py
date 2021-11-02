@@ -95,6 +95,9 @@ class MakeTrays:
         if generator['flat'] == True:
             return f"{generator['output_folder']}"
 
+        if generator['output_subfolder']:
+            return f"{generator['output_folder']}/{generator['output_subfolder']}"
+
         return f"{generator['output_folder']}/{subfolder}"
 
     def slice(self, files, count_only, force_slice):
@@ -298,7 +301,7 @@ class MakeTrays:
             return
 
         
-        for i in generator['custom_layouts_dict']['customColRows']:
+        for i in generator['custom_layouts_dict'].get('customColRows', {}):
             expression = generator['custom_layouts_dict']['customColRows'][i]['Custom_Col_Row_Ratios']
             folder_path = self.get_output_folder(generator,
                                                  self.get_output_path(generator, length, width, height))
@@ -312,7 +315,7 @@ class MakeTrays:
                                     ])
             self.generate_object(cmd, files, count_only)
 
-        for i in generator['custom_layouts_dict']['customDivisions']:
+        for i in generator['custom_layouts_dict'].get('customDivisions', {}):
             expression = generator['custom_layouts_dict']['customDivisions'][i]['Custom_Division_List']
             folder_path = self.get_output_folder(generator,
                                                  self.get_output_path(generator, length, width, height))
@@ -427,6 +430,8 @@ class MakeTrays:
     def enumerate_generator(self, generator, count_only):
         global args
 
+        if not count_only:
+            print("Running generator: ", generator['name'])
         sizes = self.enumerate_tray_sizes(generator)
         if not count_only and self.args.info:
             print("These tray sizes will be considered:")
@@ -646,6 +651,8 @@ class MakeTrays:
             return arg
         
         if result:
+            if type(result) is int:
+                return [ result ]
             if asList:
                 return result.split()
 
@@ -687,6 +694,9 @@ class MakeTrays:
             'model_format', self.args.model_format, "3mf")
         config['output_folder'] = self.get_config_value(
             'output_folder', self.args.output_folder)
+
+        config['output_subfolder'] = self.get_config_value(
+            'output_subfolder')
 
         # Check that we can resolve an OpenSCAD executable
         if not os.path.exists(config['openscad_exec']):
@@ -827,15 +837,15 @@ class MakeTrays:
                 div_t = wall_dims[2]
 
         interlock_dims = self.get_config_value(
-            "interlock_dimensions", self.args.interlock_dimensions)
+            "interlock_dimensions", self.args.interlock_dimensions, asList=True)
         if (interlock_dims is not None):
             if len(interlock_dims) >= 1:
-                intr_h = interlock_dims[0]
-                intr_r = interlock_dims[1]
+                intr_h = float(interlock_dims[0])
+                intr_r = float(interlock_dims[1])
             if len(interlock_dims) > 1:
-                intr_r = interlock_dims[1]
+                intr_r = float(interlock_dims[1])
             if len(interlock_dims) > 2:
-                intr_g = interlock_dims[2]
+                intr_g = float(interlock_dims[2])
 
         config['wall_defs'] = [
             "-D", f"Tray_Wall_Thickness={wall_t:.3f}",
@@ -872,11 +882,12 @@ class MakeTrays:
 
         self.global_config = None
         self.config = self.get_configuration()
-
+        self.config['name'] = "root"
         self.generator_configs = [ self.config ]
         if self.config['generators']:
             for cfg in self.config['generators'].keys():
                 config = self.get_configuration(self.config['generators'][cfg])
+                config['name'] = cfg
                 self.generator_configs += [config]
 
         if self.args.count_only:
