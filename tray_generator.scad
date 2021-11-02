@@ -278,7 +278,7 @@ module make_div(dir, pos, height, from=0, to=1.0, hscale=1.0) {
 }
 
 module make_lid() {
-    label_div_offset = (Label_Lid == true)?0.2:0.0;
+    label_div_offset = (Label_Lid == true)?0.3:0.0;
     rotate([0,0,0]) {
         difference() {
             union() {
@@ -311,18 +311,18 @@ module make_lid() {
                         }
                     }
                 }
-                // if (Label_Lid == true) {
-                //     translate([0,0,scaled_lid_thickness-0.001]) {
-                //         make_tray_cups(label_div_offset);
-                //     }
-                // }
-            }
-
-            if (Label_Lid == true) {
-                translate([0,0,scaled_lid_thickness-0.5]) {
-                    make_tray_cups(10);
+                if (Label_Lid == true) {
+                    translate([0,0,scaled_lid_thickness-0.001]) {
+                        make_tray_cups(label_div_offset);
+                    }
                 }
             }
+
+            // if (Label_Lid == true) {
+            //     translate([0,0,scaled_lid_thickness-0.5]) {
+            //         make_tray_cups(10);
+            //     }
+            // }
 
             // Create subtractive handles, if specified.
             if (Lid_Handle_Style == "Finger_Holes") {
