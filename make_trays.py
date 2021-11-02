@@ -1088,9 +1088,10 @@ class MakeTrays:
 
         params = []
         for param in other:
-            pname = param[0 : param.index("=")]
-            if not pname in oscad_variables:
-                suggestions = process.extract(pname, oscad_variables, limit=1)
+            pname, pvalue = param.split("=")
+            # Check that this is known script parameter
+            if not pname in oscad_variables["list"]:
+                suggestions = process.extract(pname, oscad_variables["list"], limit=1)
                 if suggestions:
                     sys.exit(
                         f"Oops, other_oscad_params:{pname} is not a known parameter.\nDid you mean: {suggestions[0][0]}"
@@ -1099,6 +1100,22 @@ class MakeTrays:
                     sys.exit(
                         f"Oops, other_oscad_params:{pname} is not a known parameter.\I've got no suggestions..."
                     )
+
+            # If we know the valid options for this paramters, check the value.
+            if oscad_variables["options"][pname]:
+                if not pvalue in oscad_variables["options"][pname]:
+                    print(oscad_variables["options"][pname])
+                    suggestions = process.extract(
+                        pvalue, oscad_variables["options"][pname], limit=1
+                    )
+                    if suggestions:
+                        sys.exit(
+                            f"Oops, other_oscad_params:{pname}={pvalue} is not a valid parameter value.\nDid you mean: {suggestions[0][0]}"
+                        )
+                    else:
+                        sys.exit(
+                            f"Oops, other_oscad_params:{pname}{pvalue} is not a valid parameter value.\I've got no suggestions..."
+                        )
 
             params += ["-D", param]
 
@@ -1269,22 +1286,46 @@ Use "-h" to get more help.'
         print(count_summary)
 
 
-oscad_variables = []
+oscad_variables = {"list": [], "options": {}}
 
 
 def get_oscad_variables():
     global oscad_variables
 
     pattern = re.compile("(\w+)\s+=\s+.*;")
+    values = re.compile("(\w+)\s+=\s+.*;\s+//\s+(\[.*\])")
+    booleans = re.compile("(\w+)\s+=\s+(true|false);.*")
+
     with open("tray_generator.scad") as fp:
         line = fp.readline()
         while line:
-            if "__Customizer_Limit__" in line:
-                break
-            m = pattern.match(line)
-            if m:
-                oscad_variables += [m.group(1)]
-            line = fp.readline()
+            try:
+                if "__Customizer_Limit__" in line:
+                    break
+                m = values.match(line)
+                if m and "," in m.group(2):
+                    try:
+                        optlist = json.loads(m.group(2))
+                        oscad_variables["list"] += [m.group(1)]
+                        oscad_variables["options"][m.group(1)] = m.group(2)
+                    except json.JSONDecodeError:
+                        oscad_variables["list"] += [m.group(1)]
+                        oscad_variables["options"][m.group(1)] = None
+                    continue
+
+                m = booleans.match(line)
+                if m:
+                    oscad_variables["list"] += [m.group(1)]
+                    oscad_variables["options"][m.group(1)] = ["true", "false"]
+                    print(m.group(2))
+                    continue
+
+                m = pattern.match(line)
+                if m:
+                    oscad_variables["list"] += [m.group(1)]
+                    oscad_variables["options"][m.group(1)] = None
+            finally:
+                line = fp.readline()
 
 
 if __name__ == "__main__":

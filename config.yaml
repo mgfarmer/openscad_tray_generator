@@ -30,7 +30,7 @@ generators:
       Make_Insert_Tray=true
       Insert_Tray_Gap=0.03
       Divider_Wall_Height_Scale=0.65
-      Make_Finger_Slot=true
+      Make_Finger_Slots=true
       Finger_Slot_Position=0.77
       Finger_Slot_Lift=0.15
       Finger_Slot_Radius=2.0
