@@ -4,18 +4,11 @@ What if you could generate a vast library of organizing trays all designed to wo
 
 ## Description
 
-You are a maker.  You have, or are building, a vast inventory of tools and small parts.  You would really like to 
-keep all of this stuff sorted and organized. Maybe you have an existing storage cabinet with drawers, or maybe 
-you are building one of those too.  What you need for those drawers are organizer trays tailor made for specific items.
+You are a maker.  You have, or are building, a vast inventory of tools and small parts.  You would really like to keep all of this stuff sorted and organized. Maybe you have an existing storage cabinet with drawers, or maybe you are building one of those too.  What you need for those drawers are organizer trays tailor made for specific items.
 
-This tool, which I call Tray Generator (because I cannot think of a better name right now) might be just what you 
-need. Tray Generator can be used to build a large library of trays, trays that are all designed to work together.
-They will fill grids nicely.  They will stack nicely.  You can even print lids.  
+This tool, which I call Tray Generator (because I cannot think of a better name right now) might be just what you need. Tray Generator can be used to build a large library of trays, trays that are all designed to work together. They will fill grids nicely.  They will stack nicely.  You can even print lids.  
 
-The general intent is that you can build a large library of compatible trays and then print what you need, when you 
-need it.  By creating this library once, you'll ensure that your future tray needs are fully compatible with your 
-existing trays.  (And, with careful planning, youi'll be able to add new custom, and compatible, trays in the 
-future.)
+The general intent is that you can build a large library of compatible trays and then print what you need, when you need it.  By creating this library once, you'll ensure that your future tray needs are fully compatible with your existing trays.  (And, with careful planning, youi'll be able to add new custom, and compatible, trays in the future.)
 
 ## Getting Started
 
@@ -27,19 +20,21 @@ future.)
 
 Download and install the latest version of OpenSCAD.  It is recommend that you add the OpenSCAD folder to
 your path.  If you don't, you'll need to tell Tray Generator where to find the executable using the --oscad 
-command line parameter (or you could just edit the source and hard code the full path).
+command line parameter or in a yaml config file.
 
 You probably already have python 3.8+.  If not, get it from [python.org](python.org)
 ```
 > python --version
-Python 3.8.7
+Python 3.8.7  (or greater, or may lower, but I've only used 3.8, and now 3.9)
 ```
+
+Tray Generator also depends on a few python libraries, and it is recommended that you setup a venv and install those libraries into the virtual environment.  I'm still new to this whole python eco-system so it is probably best to seek guidance on this part elsewhere.
 
 If you have a 3D printer, you probably have a slicer, and that slicer probably has a command line interface.
 Tray Generator can, optionally, automatically slice the tray models that you create.  To make this work
 you need to modify slice.bat/slice.sh to properly invoke your slicer of choice.  I use PrusaSlicer, so
 these files are already setup to work with it, though you might need to specify the path or put your slicer 
-on your path
+on your path.  Take a look at the slice.bat file and adapt it to your sliver of choice.
 
 ### Installing
 
@@ -69,7 +64,7 @@ That will do nothing but print some information to help you get started.  So try
 > python .\make_trays.py -o mytrays
 You need to specify dimensions of the tray(s) you want to create using
 --dimension/--heights, or --lengths, --widths, and --height.
-For instance, try "--dimension 2x4x1"
+For instance, try "--dimension 8x4x1"
 Use "-h" to get more help
 ```
 This tells Tray Generator to place all generated objects in to a subfolder called "mytrays".
@@ -86,10 +81,7 @@ Number of objects existing:         0
 You can disable this prompt with "--doit"
 Are you ready to do this? [Y/n]:
 ```
-Finally, something good is going to happen.  You can see that two trays are going to be created.  
-Each tray will be the dimensions you specified on the command line.  By the way, the default unit scale 
-is inches, but Tray Generator works just as well with metric by specifying "-u/--units cm" on the command line.
-All dimensions expressed in the command line parameters are expressed using the chosen unit scale.
+Finally, something good is going to happen.  You can see that two trays are going to be created. Each tray will be the dimensions you specified on the command line.  By the way, the default unit scale is inches, but Tray Generator works just as well with metric by specifying "-u/--units cm" on the command line (or in global_config.yaml). All dimensions expressed in the command line parameters are expressed using the chosen unit scale.
 
 So before Tray Generator does anything, it will ask you if you're ready to proceed.  This is done, by
 default, because Tray Generator is capable of generating 1000's of trays in a single invocation, and 
