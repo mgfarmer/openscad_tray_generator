@@ -255,11 +255,11 @@ You may never need all these trays, but you may need several of them, and with t
 
 But there is more. So much more!
 
-
+To be continued.....
 
 ## Printing Your Trays
 
-This is mostly up to you.  You know your printer and how to make it print well. But I very
+This is mostly up to you.  You know your printer and how to make it print well (hopefully). But I very
 highly recommend printing with supports if you are printing stackable trays.  Stackable
 trays have a recessed edge at the bottom with a 90 degree corner.  If you don't print
 with supports, your edged will sag and the trays will not stack nicely.
@@ -271,7 +271,7 @@ Contributors names and contact info
 
 ## Version History
 
-* no official releases, yet.
+No official releases, yet.  Things are changing very quickly....
 
 ## License
 
