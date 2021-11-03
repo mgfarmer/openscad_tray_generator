@@ -154,9 +154,12 @@ class MakeTrays:
             _filestr = " ".join(_files)
             if not count_only:
                 print(
-                    f"Generating: ({self.number_of_objects_generated} of {self.number_of_objects_total}):"
+                    f"    Generating: ({self.number_of_objects_generated} of {self.number_of_objects_total}):"
                 )
-                print(f"     Rendering: {files['model']}")
+                print(
+                    f"        Rendering: {files['png'] if self.args.preview_only else files['model']}"
+                )
+
                 self.result["models"] += [files["model"]]
             if not self.args.dryrun and not count_only:
                 if not os.path.exists(files["folder"]):
@@ -1246,7 +1249,7 @@ class MakeTrays:
             message = 'This probably wasn\'t what you were expecting!\n\
 You probably need to specify dimensions of the tray(s) you want to create using\n\
 --dimension/--heights, or --lengths, --widths, and --height.\n\
-For instance, try "--dimension 2x4x1"\n\
+For instance, try "--dimension 8x4x1"\n\
 Use "-h" to get more help.'
             sys.exit(message)
 
