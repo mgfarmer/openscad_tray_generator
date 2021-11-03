@@ -480,6 +480,13 @@ class MakeTrays:
                 length = float(lxw[0])
                 width = float(lxw[1])
 
+                # Since we assume length is the longest dimension, swap these is the user
+                # enters it this way.
+                if width > length:
+                    tmp = length
+                    length = width
+                    width = tmp
+
                 max_length = max(max_length, length)
                 max_width = max(max_width, width)
 
