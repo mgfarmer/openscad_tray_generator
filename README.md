@@ -10,7 +10,14 @@ This tool, which I call Tray Generator (because I cannot think of a better name 
 
 The general intent is that you can build a large library of compatible trays and then print what you need, when you need it.  By creating this library once, you'll ensure that your future tray needs are fully compatible with your existing trays.  (And, with careful planning, you will be able to add new custom, and compatible, trays in the future.)
 
-## Getting Started
+There are two primary scripts:
+
+  - tray_generator.scad
+  - make_trays.py
+
+The tray_generator.scad file is a stand-alone OpenSCAD program file.  You can run the OpenSCAD GUI and load this script and use the Customizer to design individual trays.  There is a lot of flexibility provided through the customizer (as you'll see later).  And using OpenSCAD this way is a great way to design custom tray layouts to add to your library.
+
+The make_trays.py script is a command line front-end to OpenSCAD and the tray_generator.scad script.  Using make_trays.py lets you create and maintain libraries of trays defined in yaml configuration files.  It also has a command line interface to quickly generate trays on demand.
 
 ### Dependencies
 
@@ -28,17 +35,17 @@ You probably already have python 3.8+.  If not, get it from [python.org](python.
 Python 3.8.7  (or greater, or may lower, but I've only used 3.8, and now 3.9)
 ```
 
-Tray Generator also depends on a few python libraries, and it is recommended that you setup a venv and install those libraries into the virtual environment.  I'm still new to this whole python eco-system so it is probably best to seek guidance on this part elsewhere.
+Tray Generator also depends on a few python libraries, and it is recommended that you setup a venv and install those libraries into the virtual environment (see requirements.txt).  I'm still new to this whole python eco-system so it is probably best to seek guidance on this part elsewhere.
 
 If you have a 3D printer, you probably have a slicer, and that slicer probably has a command line interface.
 Tray Generator can, optionally, automatically slice the tray models that you create.  To make this work
 you need to modify slice.bat/slice.sh to properly invoke your slicer of choice.  I use PrusaSlicer, so
 these files are already setup to work with it, though you might need to specify the path or put your slicer 
-on your path.  Take a look at the slice.bat file and adapt it to your sliver of choice.
+on your path.  Take a look at the slice.bat file and adapt it to your slicer of choice.
 
 ### Installing
 
-Simple! You only need to clone this repo to your system.
+Simple! Once you have the dependencies installed, you only need to clone this repo to your system.
 ```
 > git clone https://github.com/mgfarmer/openscad_tray_generator.git
 ```
@@ -189,9 +196,34 @@ Only the one new tray was generated.  Now, if you really want to regenerate all 
 the "--regen" command line parameter (or completely delete the mytrays folder).  Go ahead and try it (it is just 3 
 tray...you have time).
 
+Now try this:
+
+```
+python .\make_trays.py -o mytrays --dimensions 8x4
+Accumulating work units...
+When using 'dimensions' with LxW expressions, you must also provide heights using 'heights', or use LxWxH expressions
+```
+
+Notice that the --dimensions parameter only specified the length and width of the tray, and not the height.  Then take note of the message printed.  Using using just LxW dimensions like this allows you to create several trays of different heights by providing a list of heights instead of calling out the LxWxH specification for each tray.  Add the --heights parameter:
+
+```
+python .\make_trays.py -o mytrays --dimensions 8x4 --heights 0.5 0.75 1 1.25 1.5 2
+
+Accumulating work units...
+This is what is going to happen:
+Number of objects declared:         6
+Number of objects existing:         0
+Number of objects to be gen/sliced: 6, 0
+
+You can disable this prompt with "--doit"
+Are you ready to do this?
+```
+Now you are getting six trays of different heights.  These trays are all stackable, using a small extrusion on the bottom of the tray that sits into the tray below it so they won't slide around.
+
+
 There is so much more...
 
-Try this:
+The --dimension parameter is primarily aimed at creating small batches of trays.  If you want to create a larger library of trays, there are betters ways forward.  Try this:
 
 ```
 python .\make_trays.py -o tmp --lengths 2 4 6 8 --widths 2 4 6 8 --heights 0.5 0.75 1 1.25 1.5 2
@@ -221,7 +253,7 @@ You can disable this prompt with "--doit"
 Are you ready to do this? [Y/n]:
 ```
 
-Now we're cooking.  150 trays! Certainly you would not need this many options (oh, but you do, and more...).  The "--make_square_cups" option will generate trays with square sized storage dividers in the trays.  Trays are generated for each square size that will fit in a given tray dimension.  For instance, if you have a 8"x4" tray, you'll get storage cups with dimensions of 1", 2", and 4" because those dimensions are all integer divisors of 8 and 4.
+Now we're cooking.  150 trays! Certainly you would not need this many options (oh, but you do, and more...).  The "--make_square_cups" option will generate trays with square sized storage dividers in the trays.  Trays are generated for each square size that will fit in a given tray dimension.  For instance, if you have a 8x4 tray, you'll get storage cups with dimensions of 1, 2, and 4 units because those dimensions are all integer divisors of 8 and 4.  On the other hand, if you make an 8x3 tray this way you will only get 1 unit cups because no other unit size divides evenly into 8 and 3.
 
 Time to level up! Try this:
 
@@ -237,7 +269,7 @@ You can disable this prompt with "--doit"
 Are you ready to do this? [Y/n]:
 ```
 
-So there you go!  1206 trays!  That is a lot of trays...  You know you may need them at some point.  The "--make_divisions" options generates trays with integral divisions in length, width, and length+width combinations, for all heights.  It is probably easier to visualize this then to explain it in text, so try (a smaller combination):
+BAM!  1206 trays.  That is a lot of trays...  You know you may need them at some point.  The "--make_divisions" options generates trays with integral divisions in length, width, and length+width combinations, for all heights.  It is probably easier to visualize this then to explain it in text, so try (a smaller combination):
 
 ```
 python .\make_trays.py -o tmp --lengths 4 --widths 2 4 --heights 1 --make_divisions --preview --doit
@@ -247,7 +279,7 @@ Number of objects declared:         12
 Number of objects existing:         0
 Number of objects to be gen/sliced: 12, 0
 ```
-This will generate 4x2 and 4x4 trays, and yet. there are still 12 variants!
+This will generate 4x2 and 4x4 trays, and yet, there are still 12 variants!
 
 Then take a look at the generated preview images to get a clear picture of what is happening.  You'll see that each tray size has variants with divisions that fit the tray down to 1" (or 3cm).  
 

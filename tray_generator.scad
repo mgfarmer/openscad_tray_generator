@@ -1,4 +1,4 @@
-//// Specifies the measurement system and scale you want to use for your trays.  All dimensions below will be in these units.  There are presets called "imperal defaults" and "metric defaults" that make good starting points. 
+// Specifies the measurement system and scale you want to use for your trays.  All dimensions below will be in these units.  There are presets called "imperal defaults" and "metric defaults" that make good starting points. 
 Scale_Units = 25.4; // [25.4:inch, 10.0:cm]
 
 // Specifies the external tray length in the select unit scale
@@ -13,12 +13,9 @@ Tray_Height = 1.0; // [0.0:0.25:8]
 // Create a lid for your tray.  (See Lid and Interlock Parameters).
 Create_A_Lid = false;
 
-// Select a build mode, then use the controls in the same named tabs to specify generation parameters
-Build_Mode = "Just_the_Tray"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
-
 /* [Tray Insert Parameters] */
 
-// Size this tray to fit into a bigger tray.  Tray Length and Width is the size of the tray it will fit into. This tray will be just small enough to rest inside the outer tray. The outer tray should have division walls for the insertr tray to rest on, that are sized down appropriately. See "Insert Tray Heighth". Using this will force the Interlock Height to 0
+// Size this tray to fit into a bigger tray.  Tray Length and Width is the size of the tray it will fit into. This tray will be just small enough to rest inside the outer tray. The outer tray should have division walls for the insert tray to rest on, that are sized down appropriately, or add corner posts. See "Insert Tray Heighth". Using this will force the Interlock Height to 0
 Make_Insert_Tray = false;
 
 // Apply this to the main tray.  Use this to adapt a larger tray to accespt an smaller insert tray. Set this to be the same height as the height of the insert tray. 
@@ -33,9 +30,13 @@ Add_Corner_Posts = false;
 // Size of the corner post
 Corner_Post_Size = 0.2; //[0.1:0.05:0.5]
 
+// Select a build mode, then use the controls in the same named sections to specify generation parameters
+Build_Mode = "Just_the_Tray"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
+
+
 /* [Square Cups] */
 // If not 0, specifies the size of square cups to be create, both tray_length and tray_width should be a multiple of this value.  If your tray is 8x4 and you use a cup size of 1 you will get 32 cups. 
-Square_Cup_Size = 1; //[0.10:0.5:10]
+Square_Cup_Size = 1; //[0.0:0.5:10]
 
 /* [Length/Width Cups] */
 // This create the specified number of equal length cups along the length of the tray.
@@ -450,8 +451,17 @@ module make_custom_div(div_list, height) {
 }
 
 module make_equal_cup_dividers(height) {
-    make_equal_cups(Tray_Length/Square_Cup_Size, height, "width");
-    make_equal_cups(Tray_Width/Square_Cup_Size, height, "length");
+    if (Square_Cup_Size != 0) {
+        ldivs = Tray_Length/Square_Cup_Size;
+        wdivs = Tray_Width/Square_Cup_Size;
+        if (ldivs == floor(ldivs) && wdivs == floor(wdivs)) {
+            make_equal_cups(Tray_Length/Square_Cup_Size, height, "width");
+            make_equal_cups(Tray_Width/Square_Cup_Size, height, "length");
+        }
+        else {
+            echo("Warning: Specified square cup size does not fit dimensions</b>");
+        }
+    }
 }
 
 module make_lw_cups(height) {
