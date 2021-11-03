@@ -1,11 +1,16 @@
 ---
 openscad_exec: openscad
+units: in
 scales:
   in: 25.4
   cm: 10
   digit: 19.05
   barleycorn: 8.4667
 default_dim_in_mm:
+  # These dimesions are always expressed in OpenSCAD units (which are mm for all intents and purposes)
+  # However, if you specify any of these using OpenSCAD variables or cli parameters then you'll want
+  # to specify them in your unit scale of choice.  These here are default values that are scaled up to
+  # your chosen unit choice (before being scaled back down in OpenSCAD).  Just go with it...
   wall: 2.75
   floor: 1.75
   division: 1.75

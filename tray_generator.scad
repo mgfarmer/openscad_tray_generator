@@ -128,7 +128,7 @@ Rotate_Handle = 0.0; // [ 0.00 : 45.00 : 180.00]
 // Specifies the height of the interlock panel extruded below the tray (and also the distance that the top of the dividers are below the upper tray edge. Specify 0 for non-interlocking stackers. You can still stack them, they just won't interlock.).
 Interlock_Height = 0.05; // [0.0:0.01:0.25]
 
-// Specifies how far below the top edge of the tray the top edge of the dividers will be.  Only used when Interlock_Height==0, and intended for use with interlocking lids, recessed lids, or to give a little more recess to insert trays.  When Interlock_Height > 0, it is used instead.
+// Only used when Interlock_Height==0, and intended for use with interlocking lids and trays, recessed lids, or to give a little more recess to insert trays.  When Interlock_Height > 0, it is used instead.
 Interlock_Divider_Wall_Recess = 0.0; // [0.0:0.01:0.25]
 
 // Specifies the gap between the interlock extrusion and the inner face of the outer wall of the tray. Largers values will give a looser fit.
@@ -137,6 +137,8 @@ Interlock_Gap = 0.003;  // [0.0:0.001:0.020]
 // Make sure all variables for the customizer are declared above this line.  Other globals can be put below
 // this line to ensure they don't show up in the customizer UI.
 module __Customizer_Limit__ () {}
+
+Perimeter_Interlock = false;
 
 // Create scaled versions of all user paramters
 scaled_wall_thickness = Scale_Units * Tray_Wall_Thickness;
@@ -303,14 +305,18 @@ module make_lid() {
                 if (scaled_interlock_height > 0) {
                     // Create the part of the lid recessed below the tray edge.
                     translate([0,0, -scaled_interlock_height/2+0.001]) {
-                        mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height, 
-                        scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
-                        // difference() {
-                        //     mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height, 
-                        //     scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
-                        //     mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+0.002, 
-                        //     scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap+scaled_wall_thickness*2);
-                        // }
+                        if (Perimeter_Interlock == false) {
+                            mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height, 
+                            scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
+                        }
+                        else {
+                            difference() {
+                                mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height, 
+                                scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
+                                mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height+0.002, 
+                                scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap+scaled_wall_thickness*2);
+                            }
+                        }
                     }
                 }
                 if (Interlocking_Lid == true && scaled_lid_thickness > 0) {

@@ -24,7 +24,7 @@ def get_slice_cmd(model):
 # Ensure floats with ".0" are converted to ints for inclusion in strings
 # So we get 5x5 instead of 5.0x5.0.
 def numstr(number):
-    if number == math.floor(number):
+    if number == math.floor(float(number)):
         return int(number)
     return number
 
@@ -533,11 +533,15 @@ class MakeTrays:
 
     def enumerate_generator(self, generator, count_only):
         global args
+        if count_only:
+            print(
+                f"Generator '{generator['name']}' is using '{generator['unit_name']}' units"
+            )
 
         if not count_only:
             print("Running generator: ", generator["name"])
         sizes = self.enumerate_tray_sizes(generator)
-        if not count_only and self.args.info:
+        if not count_only:
             print("These tray sizes will be considered:")
             print("    ", sizes)
 
@@ -909,33 +913,44 @@ class MakeTrays:
             print(f"{filename} does not exist. Cannot continue!")
             sys.exit(1)
 
-        if self.args.info:
-            print(f"Reading application data from: {filename}")
+        print(f"Reading application data from: {filename}")
 
         with open(filename) as g:
             self.global_config = yaml.safe_load(g)
 
-    def get_config_value(self, key, arg=None, default=None, asList=False):
+    def get_config_value(
+        self, key, arg=None, default=None, asList=False, asFloat=False
+    ):
         result = None
 
+        # First look in the global configuration
         if self.global_config and self.global_config.get(key):
             result = self.global_config.get(key)
 
+        # Then look in the top level configusation of the provided config file
         if self.top_config_dict and self.top_config_dict.get(key):
             result = self.top_config_dict.get(key)
 
+        # Next look in the second level configuration.
         if self.subconfig and self.subconfig.get(key):
             result = self.subconfig.get(key)
 
+        # cli params, if provided, override all others...
         if arg:
             return arg
 
-        if result:
-            if type(result) is int:
-                return [result]
-            if asList:
-                return result.split()
+        # Covert our resultto a list if needed.
+        if result is not None and type(result) is not list and asList:
+            result = result.split()
 
+        # Convert our result to float if needed.
+        if result is not None and asFloat:
+            if type(result) is list:
+                result = [float(i) for i in result]
+            else:
+                result = float(result)
+
+        if result is not None:
             return result
 
         return default
@@ -950,8 +965,7 @@ class MakeTrays:
             if filename and not os.path.exists(filename):
                 sys.exit(f"Specified config file does not exist: {filename}")
 
-            if self.args.info:
-                print(f"Reading configuration from: {filename}")
+            print(f"Reading configuration from: {filename}")
 
             if filename:
                 with open(filename) as f:
@@ -996,13 +1010,13 @@ class MakeTrays:
             "dimensions", self.args.dimensions, asList=True
         )
         config["lengths"] = self.get_config_value(
-            "lengths", self.args.lengths, asList=True
+            "lengths", self.args.lengths, asList=True, asFloat=True
         )
         config["widths"] = self.get_config_value(
-            "widths", self.args.widths, asList=True
+            "widths", self.args.widths, asList=True, asFloat=True
         )
         config["heights"] = self.get_config_value(
-            "heights", self.args.heights, asList=True
+            "heights", self.args.heights, asList=True, asFloat=True
         )
 
         self.determine_units(config)
@@ -1226,8 +1240,7 @@ class MakeTrays:
         self.max_width = 0
 
     def make(self):
-        if self.args.info:
-            print(f"Will generate {self.config['model_format']} files.")
+        print(f"Will generate {self.config['model_format']} files.")
 
         self.number_of_objects = 0
         self.number_of_objects_generated = 0
