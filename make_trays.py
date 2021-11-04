@@ -527,8 +527,13 @@ class MakeTrays:
             return sizes
 
     def enumerate_objects(self, count_only):
+        gen_list = self.config["gen_list"]
         if self.generator_configs:
             for gen in self.generator_configs:
+                if gen["name"] == "root":
+                    continue
+                if gen_list is not None and gen["name"] not in gen_list:
+                    continue
                 self.enumerate_generator(gen, count_only)
 
     def enumerate_generator(self, generator, count_only):
@@ -884,6 +889,13 @@ class MakeTrays:
             help="interlocking dimensions",
         )
 
+        g3.add_argument(
+            "-g",
+            "--gen_list",
+            nargs="+",
+            help="A list of generators in a config file to generate.  If not specified all generators are run",
+        )
+
         self.args = parser.parse_args()
 
     def determine_units(self, config):
@@ -1100,6 +1112,10 @@ class MakeTrays:
 
         config["lid_styles"] = self.get_config_value(
             "lid_styles", self.args.lid_styles, asList=True
+        )
+
+        config["gen_list"] = self.get_config_value(
+            "gen_list", self.args.gen_list, None, asList=True
         )
 
         config["file_prefix"] = self.get_config_value("file_prefix", None, "tray_")
