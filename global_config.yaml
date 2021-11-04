@@ -1,6 +1,7 @@
 ---
 openscad_exec: openscad
 units: in
+# These are the scale options.  You can add more, or delete the ones you don't want.
 scales:
   in: 25.4
   cm: 10

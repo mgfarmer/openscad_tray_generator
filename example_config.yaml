@@ -39,13 +39,26 @@ generators:
     file_prefix: tray_
     dimensions: 8x3x1 8x2x1
     make_square_cups: true
-    #make_divisions: true
     length_div_minimum_size: 2
-    # Other OpenSCAD controls you can add:
-    # Add_Cornert_Post=true
-    # Corner_Post_Size=<size in units>
-
-    #other_oscad_params: Create_A_Lid=true
+  some_more_trays:
+    file_prefix: tray_
+    lengths: 2 4 6
+    widths: 2 4
+    heights: 1 2
+  stl_trays:
+    model_format: stl
+    file_prefix: stl_
+    lengths: 4 6
+    widths: 2 4
+    heights: 2
+  tray_test_1:
+    file_prefix: test1_
+    lengths: 4
+    widths: 4
+    heights: 2
+  tray_with_divisions:
+    dimensions: 8x8x1
+    make_divisions: true
   some_metric_trays:
     units: cm
     file_prefix: metric_

@@ -539,11 +539,9 @@ class MakeTrays:
             )
 
         if not count_only:
-            print("Running generator: ", generator["name"])
+            print(f"Running {generator['model_format']} generator: {generator['name']}")
+
         sizes = self.enumerate_tray_sizes(generator)
-        if not count_only:
-            print("These tray sizes will be considered:")
-            print("    ", sizes)
 
         handled_lids = []
         for s in sizes:
@@ -939,9 +937,12 @@ class MakeTrays:
         if arg:
             return arg
 
-        # Covert our resultto a list if needed.
+        # Covert our result to a list if needed.
         if result is not None and type(result) is not list and asList:
-            result = result.split()
+            if type(result) == str:
+                result = result.split()
+            else:
+                result = [result]
 
         # Convert our result to float if needed.
         if result is not None and asFloat:
@@ -977,6 +978,7 @@ class MakeTrays:
 
         config = {}
 
+        # Only alloow the generator section at level two.  No sub-sub-generators allowed.
         if not subconfig:
             config["generators"] = self.get_config_value("generators")
 
@@ -1240,8 +1242,6 @@ class MakeTrays:
         self.max_width = 0
 
     def make(self):
-        print(f"Will generate {self.config['model_format']} files.")
-
         self.number_of_objects = 0
         self.number_of_objects_generated = 0
         self.number_of_objects_sliced = 0
