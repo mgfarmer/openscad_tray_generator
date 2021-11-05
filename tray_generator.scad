@@ -237,33 +237,37 @@ module mkshell (length, width, height, wall, radius, offset=0, offset2=0) {
 
 
 /*
-    Someday it might be nice to combine the make_l_div() and make_w_div modules into
-    a single module so I don't have to duplicate code between then.  But for now
-    these work without having to conditionally figure out the geometries.
+    All division wall construction comes down to this and the next module.  Combinging
+    these into a singel module, so far, has resulted in code that is really hard to
+    understand, so, for now, they are two separate modules that are easier to grasp,
+    but require a bit more maintenance.
  */
 module make_l_div(pos, height, from=0, to=1.0, hscale=1.0) {
+    tray_1_dim = scaled_tray_width;
+    tray_2_dim = scaled_tray_length;
     // pos is a normalized position, from 0.0 to 1.0
     // from is a normalized start point, default 0.0 is one wall
     // end is a normalized end point, default 1.0 is the other wall
     // hscale can be used to scale the height of the division wall
-    wid = scaled_tray_width;
-    wpos = (wid*pos) - (wid/2);
-    _length = (scaled_tray_length - scaled_wall_thickness);
-    lstart = (_length*from) - (_length/2) + scaled_divider_thickness/2;
-    lend = (_length*to) - (_length/2) - scaled_divider_thickness/2;
-    llen = (lend - lstart); 
+    dim = tray_1_dim;
+    pos = (dim*pos) - (dim/2);
+
+    op_dim = (tray_2_dim - scaled_wall_thickness);
+    start = (op_dim*from) - (op_dim/2) + scaled_divider_thickness/2;
+    end = (op_dim*to) - (op_dim/2) - scaled_divider_thickness/2;
+    dlen = (end - start); 
     hdiv = (height) * hscale * Divider_Wall_Height_Scale;
     union() {
-        translate([lstart+(llen/2),wpos,hdiv/2]) {
-            cube([llen,scaled_divider_thickness,hdiv], center=true);
+        translate([start+(dlen/2),pos,hdiv/2]) {
+            cube([dlen,scaled_divider_thickness,hdiv], center=true);
         }
         if (from > 0.0) {
-            translate([lstart,wpos,hdiv/2]) {
+            translate([start,pos,hdiv/2]) {
                 cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
             }
         }
         if (to < 1.0) {
-            translate([lend,wpos,hdiv/2]) {
+            translate([end,pos,hdiv/2]) {
                 cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
             }
         }
