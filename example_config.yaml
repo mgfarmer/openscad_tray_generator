@@ -161,6 +161,30 @@ generators:
         M2_M3_Bolt_Layout:
           Custom_Col_Row_Ratios: "[1, 5, 2, 2, 2, 1.5, 2, 0, 3, 0, 3, 0, 3, 0, 2, 0, 5]"
 
+  m-size-bolt-trays-with-label-lids:
+    file_prefix: none
+    dimensions: 8x4x1
+    other_oscad_params: >
+      Make_Room_For_Recessed_Lid_And_Stacked_Tray=true
+      Lid_Handle_Style="Finger_Holes"
+      Finger_Hole_Style="Round"
+      Label_Lid=true
+      Number_Of_Finger_Holes=2
+      Lid_Thickness=0.0
+      Finger_Hole_Position=0.98
+      Create_A_Lid=true
+      Interlocking_Lid=false
+    custom_layouts:
+      customColRows:
+        M4_Bolt_Layout:
+          Custom_Col_Row_Ratios: "[1, 5, 3, 3, 3, 1.5, 3, 0, 4, 0, 4, 0, 3, 0, 2, 0, 5]"
+        M2_M3_Bolt_Layout:
+          Custom_Col_Row_Ratios: "[1, 5, 2, 2, 2, 1.5, 2, 0, 3, 0, 3, 0, 3, 0, 2, 0, 5]"
+        M4_Bolt_Layout_With_Lid:
+          Custom_Col_Row_Ratios: "[1, 5, 3, 3, 3, 1.5, 3, 0, 4, 0, 4, 0, 3, 0, 2, 0, 5]"
+        M2_M3_Bolt_Layout_With_Lid:
+          Custom_Col_Row_Ratios: "[1, 5, 2, 2, 2, 1.5, 2, 0, 3, 0, 3, 0, 3, 0, 2, 0, 5]"
+
   # This is just an odd tray with 4 chambers demonstrating the Custom_Division_List
   # layout type.
   odd_custom_tray:

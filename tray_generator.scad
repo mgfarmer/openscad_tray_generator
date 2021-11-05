@@ -2,33 +2,13 @@
 Scale_Units = 25.4; // [25.4:inch, 10.0:cm]
 
 // Specifies the external tray length in the select unit scale
-Tray_Length = 8.0; // [1.0:1.0:10.0]
+Tray_Length = 8.0; // [1.0:1.0:20.0]
 
 // Specifies the external tray width in the select unit scale
-Tray_Width = 4.0; // [1.0:1.0:10]
+Tray_Width = 4.0; // [1.0:1.0:20]
 
 // Specifies the external tray height in the select unit scale.  Stackable trays (Interlock Height > 0) will increase the actual height by the height of the interlocking extrusion.
 Tray_Height = 1.0; // [0.0:0.25:8]
-
-// Create a lid for your tray.  (See Lid and Interlock Parameters).
-Create_A_Lid = false;
-
-/* [Tray Insert Parameters] */
-
-// Size this tray to fit into a bigger tray.  Tray Length and Width is the size of the tray it will fit into. This tray will be just small enough to rest inside the outer tray. The outer tray should have division walls for the insert tray to rest on, that are sized down appropriately, or add corner posts. See "Insert Tray Heighth". Using this will force the Interlock Height to 0
-Make_Insert_Tray = false;
-
-// Apply this to the main tray.  Use this to adapt a larger tray to accespt an smaller insert tray. Set this to be the same height as the height of the insert tray. 
-Insert_Tray_Height = 0.0;  // [0.00:0.05:2.00]
-
-// Apply this to the insert tray. Use this to specify how much free space is between the inner wall of the outer tray and the outer wall of the inner tray. Larger values will create a looser fit.
-Insert_Tray_Gap = 0.03;  // [0.00:0.005:2.00]
-
-// Corner posts give the insert something to rest on if you don't want any dividers walls in the main tray.
-Add_Corner_Posts = false;
-
-// Size of the corner post
-Corner_Post_Size = 0.2; //[0.1:0.05:0.5]
 
 // Select a build mode, then use the controls in the same named sections to specify generation parameters
 Build_Mode = "Just_the_Tray"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
@@ -78,8 +58,32 @@ Corner_Roundness = 0.5; // [0.00:0.01:1.00]
 // Specifies how thick each internal cup divider will be.
 Divider_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
 
-// Scale the wall height down.
+// Normally the divider wall height is lowered to make room for the interlock extrusion.  But maybe you want to also have room for a lid. Set this to true and the wall will be lowered enough to accomodate the lid as well as a tray stacked on top.
+Make_Room_For_Recessed_Lid_And_Stacked_Tray = false; 
+
+// A fuzzy knob to scale the wall height down when all other knobs fails to accomplish what you want.
 Divider_Wall_Height_Scale = 1.0;  // [0.05:0.01:1.00]
+
+/* [Tray Insert Parameters] */
+
+// Size this tray to fit into a bigger tray.  Tray Length and Width is the size of the tray it will fit into. This tray will be just small enough to rest inside the outer tray. The outer tray should have division walls for the insert tray to rest on, that are sized down appropriately, or add corner posts. See "Insert Tray Heighth". Using this will force the Interlock Height to 0
+Make_Insert_Tray = false;
+
+// Apply this to the main tray.  Use this to adapt a larger tray to accespt an smaller insert tray. Set this to be the same height as the height of the insert tray. 
+Insert_Tray_Height = 0.0;  // [0.00:0.05:2.00]
+
+// Apply this to the insert tray. Use this to specify how much free space is between the inner wall of the outer tray and the outer wall of the inner tray. Larger values will create a looser fit.
+Insert_Tray_Gap = 0.03;  // [0.00:0.005:2.00]
+
+// Corner posts give the insert something to rest on if you don't want any dividers walls in the main tray.
+Add_Corner_Posts = false;
+
+// Size of the corner post
+Corner_Post_Size = 0.2; //[0.1:0.05:1.5]
+
+
+
+/* [Divider Wall Finger Slots] */
 
 // Create finger slots in divider walls.
 Make_Finger_Slots = false;
@@ -94,32 +98,40 @@ Finger_Slot_Width = 0.0; // [0.00:0.01:1.00]
 Finger_Slot_Position = 0.5; // [0.00:0.01:1.00]
 
 // Normalized radius where 1=divider wall height, and 0=zero
-Finger_Slot_Radius = 1.0; // [0.00:0.01:4.00]
+Finger_Slot_Radius = 1.0; // [0.00:0.01:10.00]
 
 // Normalized lift of the slot above the floor
 Finger_Slot_Lift = 1.0; // [0.00:0.01:1.00]
 
 /* [Lid Parameters] */
+// Create a lid for your tray.  (See Lid and Interlock Parameters).
+Create_A_Lid = false;
+
+
 Lid_Handle_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes"]
 
 // How thick should the lid be.  This is the height above the top edge of the tray.  If you want a fully recessed lid, specify 0 here.
 Lid_Thickness = 0.07; // [0.00:0.01:0.50]
 
-// Creates a raised edge so a tray can be stacked on top of the lid.
+// Creates a raised edge so a tray can be stacked on top of the lid.  This is only used when Lid_Thickness > 0.
 Interlocking_Lid = false;
 
-// Only used when creating a tray too.  Creates a grid on top of the lid that matches the dividers, for labels, of course.
+// Only used when creating a tray too.  Creates a raised or recessed grid on top of the lid that matches the dividers, for labels, of course.
 Label_Lid = false;
 
+// Specify whether you want a raised label grid or a recessed label grid.
+Label_Lid_Style = "Raised"; // ["Raised", "Recessed"]
+
+// How many finger holes do you want.
 Number_Of_Finger_Holes = 1; // [1, 2]
 
 Finger_Hole_Style = "Round"; // ["Square", "Round", "Diamond"]
 
 // Normalized length-wise position from the center of the tray to the finger hole(s). 0 will put the hole(s) in the center. 1.0 will center the hole on the outside of the edge.
-Finger_Hole_Position = 1.0; // [0.0:0.01:1.0]
+Finger_Hole_Position = 1.0; // [0.0:0.01:1.5]
 
 // Make them big enough for your fingers
-Finger_Hole_Diameter = 0.75; // [0.5:0.05:2.5]
+Finger_Hole_Diameter = 0.75; // [0.5:0.05:5]
 
 // Rotate the handle around the center point of the lid.
 Rotate_Handle = 0.0; // [ 0.00 : 45.00 : 180.00]
@@ -132,13 +144,15 @@ Interlock_Height = 0.05; // [0.0:0.01:0.25]
 Interlock_Divider_Wall_Recess = 0.0; // [0.0:0.01:0.25]
 
 // Specifies the gap between the interlock extrusion and the inner face of the outer wall of the tray. Largers values will give a looser fit.
-Interlock_Gap = 0.003;  // [0.0:0.001:0.020]
+Interlock_Gap = 0.003;  // [0.0:0.001:0.10]
 
 // Make sure all variables for the customizer are declared above this line.  Other globals can be put below
 // this line to ensure they don't show up in the customizer UI.
 module __Customizer_Limit__ () {}
 
 Perimeter_Interlock = false;
+
+Label_Lid_Height = 0.3; // mm
 
 // Create scaled versions of all user paramters
 scaled_wall_thickness = Scale_Units * Tray_Wall_Thickness;
@@ -156,7 +170,10 @@ scaled_Interlock_Divider_Wall_Recess = Scale_Units * ((scaled_interlock_height==
 scaled_lid_thickness = Scale_Units * Lid_Thickness;
 scaled_finger_hole_diameter = Scale_Units * Finger_Hole_Diameter;
 scaled_insert_tray_height = Scale_Units * Insert_Tray_Height;
-scaled_divider_height = scaled_tray_height-scaled_Interlock_Divider_Wall_Recess-scaled_insert_tray_height;
+scaled_divider_height = scaled_tray_height -
+    ((Make_Room_For_Recessed_Lid_And_Stacked_Tray?2:1)*scaled_Interlock_Divider_Wall_Recess) - 
+    ((Make_Room_For_Recessed_Lid_And_Stacked_Tray && Label_Lid && Label_Lid_Style == "Raised")?(Label_Lid_Height+0.01):0) -
+    scaled_insert_tray_height;
 
 scaled_corner_post_size = Scale_Units * Corner_Post_Size;
 
@@ -232,10 +249,10 @@ module make_l_div(pos, height, from=0, to=1.0, hscale=1.0) {
     wid = scaled_tray_width;
     wpos = (wid*pos) - (wid/2);
     _length = (scaled_tray_length - scaled_wall_thickness);
-    lstart = (_length*from) - (_length/2);
-    lend = (_length*to) - (_length/2);
+    lstart = (_length*from) - (_length/2) + scaled_divider_thickness/2;
+    lend = (_length*to) - (_length/2) - scaled_divider_thickness/2;
     llen = (lend - lstart); 
-    hdiv = (height) * hscale;
+    hdiv = (height) * hscale * Divider_Wall_Height_Scale;
     union() {
         translate([lstart+(llen/2),wpos,hdiv/2]) {
             cube([llen,scaled_divider_thickness,hdiv], center=true);
@@ -261,10 +278,10 @@ module make_w_div(pos, height, from=0, to=1.0, hscale=1.0) {
     llen = scaled_tray_length;
     lpos = (llen*pos) - (llen/2);
     _length = scaled_tray_width - scaled_wall_thickness;
-    wstart = (_length*from) - (_length/2);
-    wend = (_length*to) - (_length/2);
+    wstart = (_length*from) - (_length/2) + scaled_divider_thickness/2;
+    wend = (_length*to) - (_length/2) - scaled_divider_thickness/2;
     wlen = (wend-wstart);
-    hdiv = (height) * hscale;
+    hdiv = (height) * hscale * Divider_Wall_Height_Scale;
     union() {
         translate([lpos,wstart+(wlen/2),hdiv/2]) {
             cube([scaled_divider_thickness,wlen, hdiv], center=true);
@@ -292,7 +309,7 @@ module make_div(dir, pos, height, from=0, to=1.0, hscale=1.0) {
 }
 
 module make_lid() {
-    label_div_offset = (Label_Lid == true)?0.3:0.0;
+    label_div_offset = (Label_Lid == true)?Label_Lid_Height:0.0;
     rotate([0,0,0]) {
         difference() {
             union() {
@@ -329,18 +346,23 @@ module make_lid() {
                         }
                     }
                 }
-                if (Label_Lid == true) {
+                if (Label_Lid == true && Label_Lid_Style == "Raised") {
                     translate([0,0,scaled_lid_thickness-0.001]) {
-                        make_tray_cups(label_div_offset);
+                        //scale the dividers in XY so they dont extend past a recessed tray edge.
+                        scale([0.98,0.98,1]) {
+                            make_tray_cups(label_div_offset);
+                        }
                     }
                 }
             }
 
-            // if (Label_Lid == true) {
-            //     translate([0,0,scaled_lid_thickness-0.5]) {
-            //         make_tray_cups(10);
-            //     }
-            // }
+             if (Label_Lid == true && Label_Lid_Style == "Recessed") {
+                translate([0,0,scaled_lid_thickness-0.5]) {
+                    scale([0.98,0.98,1]) {
+                         make_tray_cups(10);
+                    }
+                 }
+            }
 
             // Create subtractive handles, if specified.
             if (Lid_Handle_Style == "Finger_Holes") {
@@ -415,7 +437,7 @@ module make_dividers(divs, height, orient="length", from=0, to=1.0, hscale=1.0) 
 module make_equal_cups(num_divs, height, orient="length", from=0.0, to=1.0) {
     increment = 1.0/num_divs;
     for ( i = [increment : increment : (1.0-increment)] ){
-        make_div(orient, i, height, from, hscale=Divider_Wall_Height_Scale);
+        make_div(orient, i, height, from);
     }
 }
 
@@ -425,19 +447,19 @@ module make_cups(ratios, height, orient="length", from=0.0, to=1.0, hscale=1.0) 
 }
 
 module make_walls(section, mode, walls, height, divisions) {
-    echo(section, mode, walls)
+    //echo(section, mode, walls)
     if (section < len(divisions)-1) {
         from = divisions[section];
         to = divisions[section+1];
             if (len(walls) > 2 && walls[2] > 0) {
                 ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) walls[1+i] ]);
-                make_cups(ratios, height, mode, from, to, hscale=Divider_Wall_Height_Scale);
+                make_cups(ratios, height, mode, from, to);
                 wall_specs = sub_vect(walls, 2 + walls[1]); 
                 make_walls(section+1, mode, wall_specs, height, divisions);
             }
             else {
                 ratios = rev_vect([ for( i = [1 : 1 : walls[1]]) 1 ]);
-                make_cups(ratios, height, mode, from, to, hscale=Divider_Wall_Height_Scale);
+                make_cups(ratios, height, mode, from, to);
                 wall_specs = sub_vect(walls, 2); 
                 make_walls(section+1, mode, wall_specs, height, divisions);
             }
@@ -450,7 +472,7 @@ module make_custom_div(div_list, height) {
         pos = div_list[1];
         from = div_list[2];
         to = div_list[3];
-        make_div(dir, pos, height, from, to, hscale=Divider_Wall_Height_Scale);
+        make_div(dir, pos, height, from, to);
         next_list = sub_vect(div_list, 4);
         make_custom_div(next_list, height);
     }
@@ -476,8 +498,8 @@ module make_lw_cups(height) {
 }
 
 module make_lw_cup_ratios(height) {
-    make_cups(Lengthwise_Cup_Ratios, height, "width", hscale=Divider_Wall_Height_Scale);
-    make_cups(Widthwise_Cup_Ratios, height, "length", hscale=Divider_Wall_Height_Scale);
+    make_cups(Lengthwise_Cup_Ratios, height, "width");
+    make_cups(Widthwise_Cup_Ratios, height, "length");
 }
 
 module make_custom_div_ratios(height) {
@@ -486,14 +508,14 @@ module make_custom_div_ratios(height) {
     divs = Custom_Col_Row_Ratios[1];
     if (Custom_Col_Row_Ratios[2] > 0) {
         ratios = rev_vect([ for( i = [0 : 1 : divs-1]) Custom_Col_Row_Ratios[2+i] ]);
-        make_cups(ratios, height, mode, hscale=Divider_Wall_Height_Scale);
+        make_cups(ratios, height, mode);
         divisions = concat( [0.0], make_normalized_divs(ratios), [1.0]);
         start = 2 + divs;
         wall_specs = sub_vect(Custom_Col_Row_Ratios, start);
         make_walls(0, other_mode, wall_specs, height, divisions);
     }
     else {
-        make_equal_cups(divs, height, mode, hscale=Divider_Wall_Height_Scale);
+        make_equal_cups(divs, height, mode);
         divisions = concat( [0.0], make_normalized_divs([ for( i = [0 : 1 : divs-1]) 1 ]), [1.0]);
         wall_specs = sub_vect(Custom_Col_Row_Ratios, 2);
         make_walls(0, other_mode, wall_specs, height, divisions);
@@ -513,11 +535,11 @@ module make_post(height, radius) {
 }
 
 module make_corner_posts(height) {
-    echo("make_corner_posts");
+    //echo("make_corner_posts");
     internal_length_offset = (scaled_tray_length - (2*scaled_wall_thickness))/2 - scaled_corner_post_size/2;
     internal_width_offset = (scaled_tray_width - (2*scaled_wall_thickness))/2 - scaled_corner_post_size/2;
     radius = scaled_corner_post_size/2;
-    echo("height", height, "post_size", scaled_corner_post_size)
+    //echo("height", height, "post_size", scaled_corner_post_size)
     translate([internal_length_offset,internal_width_offset,0]) {
         rotate([0,0,0]) {
             make_post(height,radius);
@@ -542,6 +564,7 @@ module make_corner_posts(height) {
 }
 
 module make_tray_cups(height) {
+    echo("Divider Wall Height:", (height*Divider_Wall_Height_Scale/Scale_Units))
     if (Build_Mode == "Square_Cups") {
         make_equal_cup_dividers(height);
     }
@@ -632,7 +655,7 @@ module make_finger_slots() {
 }
 
 
-echo(Build_Mode)
+//echo(Build_Mode)
 if (Build_Mode == "Just_the_Tray") {
     make_tray();
     if (Add_Corner_Posts == true) {
@@ -654,7 +677,8 @@ else {
 }
 
 if (Build_Mode != "Tray_Lid" && Create_A_Lid == true) {
-    translate([0, (scaled_tray_width + Scale_Units), 0]) {
+    // Move the lid so that it lay just separated from the main tray.
+    translate([0, (scaled_tray_width + 8), 0]) {
         make_lid();
     }
 }
