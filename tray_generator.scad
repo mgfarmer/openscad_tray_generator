@@ -52,7 +52,7 @@ Tray_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
 Floor_Thickness = 0.07; // [0.05:0.01:0.50]
 
 // Specifies the "roundess" of tray corners Set to 0 for square corners. Set to 1.0 for the most rounding.  This is a ratio of the wall thickness.
-Corner_Roundness = 0.5; // [0.00:0.01:1.00]
+Corner_Roundness = 1.0; // [0.00:0.01:1.00]
 
 /* [Divider Wall Parameters] */
 // Specifies how thick each internal cup divider will be.
