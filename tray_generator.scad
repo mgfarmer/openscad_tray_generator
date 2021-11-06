@@ -101,7 +101,7 @@ Finger_Slot_Position = 0.5; // [0.00:0.01:1.00]
 Finger_Slot_Radius = 1.0; // [0.00:0.01:10.00]
 
 // Normalized lift of the slot above the floor
-Finger_Slot_Lift = 1.0; // [0.00:0.01:1.00]
+Finger_Slot_Lift = 0.2; // [0.00:0.01:1.00]
 
 /* [Lid Parameters] */
 // Create a lid for your tray.  (See Lid and Interlock Parameters).
@@ -138,13 +138,13 @@ Rotate_Handle = 0.0; // [ 0.00 : 45.00 : 180.00]
 
 /* [Interlocking Parameters] */
 // Specifies the height of the interlock panel extruded below the tray (and also the distance that the top of the dividers are below the upper tray edge. Specify 0 for non-interlocking stackers. You can still stack them, they just won't interlock.).
-Interlock_Height = 0.05; // [0.0:0.01:0.25]
+Interlock_Height = 0.1; // [0.0:0.01:0.25]
 
 // Only used when Interlock_Height==0, and intended for use with interlocking lids and trays, recessed lids, or to give a little more recess to insert trays.  When Interlock_Height > 0, it is used instead.
 Interlock_Divider_Wall_Recess = 0.0; // [0.0:0.01:0.25]
 
 // Specifies the gap between the interlock extrusion and the inner face of the outer wall of the tray. Largers values will give a looser fit.
-Interlock_Gap = 0.003;  // [0.0:0.001:0.10]
+Interlock_Gap = 0.03;  // [0.0:0.001:0.10]
 
 // Make sure all variables for the customizer are declared above this line.  Other globals can be put below
 // this line to ensure they don't show up in the customizer UI.
@@ -253,8 +253,8 @@ module make_l_div(pos, height, from=0, to=1.0, hscale=1.0) {
     pos = (dim*pos) - (dim/2);
 
     op_dim = (tray_2_dim - scaled_wall_thickness);
-    start = (op_dim*from) - (op_dim/2) + scaled_divider_thickness/2;
-    end = (op_dim*to) - (op_dim/2) - scaled_divider_thickness/2;
+    start = (op_dim*from) - (op_dim/2) + ((from==0)?scaled_wall_thickness:scaled_divider_thickness)/2;
+    end = (op_dim*to) - (op_dim/2) - ((to==1)?scaled_wall_thickness:scaled_divider_thickness)/2;
     dlen = (end - start); 
     hdiv = (height) * hscale * Divider_Wall_Height_Scale;
     union() {
@@ -282,8 +282,8 @@ module make_w_div(pos, height, from=0, to=1.0, hscale=1.0) {
     llen = scaled_tray_length;
     lpos = (llen*pos) - (llen/2);
     _length = scaled_tray_width - scaled_wall_thickness;
-    wstart = (_length*from) - (_length/2) + scaled_divider_thickness/2;
-    wend = (_length*to) - (_length/2) - scaled_divider_thickness/2;
+    wstart = (_length*from) - (_length/2) + ((from==0)?scaled_wall_thickness:scaled_divider_thickness)/2;
+    wend = (_length*to) - (_length/2) - ((to==1)?scaled_wall_thickness:scaled_divider_thickness)/2;
     wlen = (wend-wstart);
     hdiv = (height) * hscale * Divider_Wall_Height_Scale;
     union() {
