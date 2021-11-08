@@ -147,10 +147,9 @@ Create_A_Box_Top = false;
 // Internal or external height of the box top, see "Dimensions Are External"
 Box_Top_Height = 0.75;
 
-// Create corner pins and pin receivers so the top and tray interlock. Size is determined using magic..
-With_Pin_Interlock = true;
+Box_Top_Interlock_Type = "Pin"; // ["Pin", "Shell"]
 
-Pin_Interlock_Height = 0.1; 
+Box_Top_Interlock_Height = 0.1; 
 
 /* [Interlocking Parameters] */
 // Specifies the height of the interlock panel extruded below the tray (and also the distance that the top of the dividers are below the upper tray edge. Specify 0 for non-interlocking stackers. You can still stack them, they just won't interlock.).
@@ -167,6 +166,8 @@ Interlock_Gap = 0.03;  // [0.0:0.001:0.10]
 module __Customizer_Limit__ () {}
 
 Perimeter_Interlock = false;
+with_pin_interlock = Create_A_Box_Top && Box_Top_Interlock_Type == "Pin";
+with_shell_internlock = Create_A_Box_Top && Box_Top_Interlock_Type == "Shell";
 
 Label_Lid_Height = 0.3; // mm
 
@@ -213,9 +214,8 @@ scaled_divider_height = scaled_tray_height -
 
 scaled_corner_post_size = Scale_Units * Corner_Post_Size;
 
-use_pin_interlock = Create_A_Box_Top && With_Pin_Interlock;
 
-scaled_pin_interlock_height = Scale_Units * Pin_Interlock_Height;
+scaled_box_top_interlock_height = Scale_Units * Box_Top_Interlock_Height;
 
 // A function to add up the elements of an vector.
 function add_vect(v, i = 0, r = 0) = i < len(v) ? add_vect(v, i + 1, r + v[i]) : r;
@@ -246,18 +246,18 @@ module mkshell(length, width, height, wall, c_radius, offset=0, offset2=0, pin_t
     // shell in order to create the tray.
     
     // offset2 => used when building the "bottom" tray that is 
-    // subrated from the top tray to create the stacking inter-
+    // subtracted from the top tray to create the stacking inter-
     // lock.  It expands the outer wall (to ensure overlap) and
     // shrinks the inner wall (to ensure a tight, but not too
     // tight, fit between the trays.
     
-    pin_height = scaled_pin_interlock_height;
+    pin_height = scaled_box_top_interlock_height;
     l = length - offset;
     w = width - offset;
     h = height;
     cyl_h = (pin_type!=1)?h:h+pin_height;
     cyl_h_xlat = (pin_type!=1)?0:(pin_height/2);
-    radius = (With_Pin_Interlock)?
+    radius = (with_pin_interlock)?
         (scaled_wall_thickness/2):c_radius;
     
     difference() {
@@ -545,15 +545,27 @@ module make_tray(height, wall_thickness, is_box_top=false) {
         translate([0,0,height/2]) {
             difference() {
                 // Main outer shell
-                pt = (Create_A_Box_Top && With_Pin_Interlock)?(is_box_top?1:2):0;
+                pt = (with_pin_interlock)?(is_box_top?1:2):0;
                 mkshell(scaled_tray_length, scaled_tray_width, height, wall_thickness, scaled_corner_radius, pin_type=pt); 
                 translate([0,0,scaled_floor_thickness]) {
-                    // Square off the corners when making slots so that the slot walls near the ends dont reflect the
-                    // internal corner radius, creating slot protrusions with a curved face.
                     corner_radius = scaled_corner_radius;
                     // Subtract inner space..
                     mkshell(scaled_tray_length, scaled_tray_width, height, 
                         wall_thickness, corner_radius, wall_thickness*2);
+                }
+                if (with_shell_internlock) {
+                    translate([0,0,height-scaled_box_top_interlock_height]) {
+                        ofs = wall_thickness+(scaled_interlock_gap/2);
+                        if (is_box_top) {
+                            mkshell(scaled_tray_length, scaled_tray_width, height+0.002, wall_thickness, scaled_corner_radius, ofs); 
+                        }
+                        else {
+                            difference() {
+                                mkshell(scaled_tray_length, scaled_tray_width, height, wall_thickness, scaled_corner_radius, -ofs); 
+                                mkshell(scaled_tray_length, scaled_tray_width, height+0.002, wall_thickness, scaled_corner_radius, ofs); 
+                            }
+                        }
+                    }
                 }
             };
         };
