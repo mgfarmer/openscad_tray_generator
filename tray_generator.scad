@@ -14,7 +14,7 @@ Tray_Width = 4.0; // [0.00:0.01:20.00]
 Tray_Height = 1.0; // [0.00:0.01:20.00]
 
 // Select a build mode, then use the controls in the same named sections to specify generation parameters
-Build_Mode = "Just_the_Tray"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
+Build_Mode = "Just_the_Tray"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Storage_Slots", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
 
 
 /* [Square Cups] */
@@ -34,6 +34,12 @@ Lengthwise_Cup_Ratios = [1,1,1,1,1];
 
 // This creates cup dividers at the given ratios.  For instance [1,1] makes two equal width divisions, and [1,1,2] makes 2 equal width small divisions and one divisions that is twice as wide.
 Widthwise_Cup_Ratios = [1,1,1,1,1];
+
+/* [Storage Slots] */
+Storage_Slot_Width = 0.08; //[0.02 : 0.001 : 1]
+Minimum_Storage_Slot_Separation = 0.08; //[0.02 : 0.001 : 1]
+Storage_Wall_Width = 0.25;
+Number_Of_Columns = 1;
 
 /* [Custom Divisions per Column or Row] */
 // It is strongly advised that you build this expression in a real text editor, then paste it here.
@@ -147,9 +153,11 @@ Create_A_Box_Top = false;
 // Internal or external height of the box top, see "Dimensions Are External"
 Box_Top_Height = 0.75;
 
+With_Dividers = false;
+
 Box_Top_Interlock_Type = "Pin"; // ["Pin", "Shell"]
 
-Box_Top_Interlock_Height = 0.1; 
+Box_Top_Interlock_Height = 0.10; // [0.0:0.01:1]
 
 /* [Interlocking Parameters] */
 // Specifies the height of the interlock panel extruded below the tray (and also the distance that the top of the dividers are below the upper tray edge. Specify 0 for non-interlocking stackers. You can still stack them, they just won't interlock.).
@@ -159,7 +167,7 @@ Interlock_Height = 0.1; // [0.0:0.01:0.25]
 Interlock_Divider_Wall_Recess = 0.0; // [0.0:0.01:0.25]
 
 // Specifies the gap between the interlock extrusion and the inner face of the outer wall of the tray. Largers values will give a looser fit.
-Interlock_Gap = 0.03;  // [0.0:0.001:0.10]
+Interlock_Gap = 0.003;  // [0.0:0.001:0.10]
 
 // Make sure all variables for the customizer are declared above this line.  Other globals can be put below
 // this line to ensure they don't show up in the customizer UI.
@@ -168,6 +176,7 @@ module __Customizer_Limit__ () {}
 Perimeter_Interlock = false;
 with_pin_interlock = Create_A_Box_Top && Box_Top_Interlock_Type == "Pin";
 with_shell_internlock = Create_A_Box_Top && Box_Top_Interlock_Type == "Shell";
+with_storage_slots = Build_Mode == "Storage_Slots";
 
 Label_Lid_Height = 0.3; // mm
 
@@ -178,12 +187,16 @@ scaled_divider_thickness = Scale_Units * Divider_Wall_Thickness;
 scaled_Insert_Tray_Gap = Scale_Units * Insert_Tray_Gap;
 
 _external_tray_length = Dimensions_Are_External?Tray_Length:(Tray_Length+2*Tray_Wall_Thickness);
-_external_tray_width = Dimensions_Are_External?Tray_Width:(Tray_Width+2*Tray_Wall_Thickness);
+
+xtrw = with_storage_slots?((Number_Of_Columns-1)*Divider_Wall_Thickness):0;
+//echo(xtrw=xtrw);
+_external_tray_width = Dimensions_Are_External?Tray_Width:((Tray_Width+2*Tray_Wall_Thickness)+xtrw); 
+    //+ (with_storage_slots?(Number_Of_Columns-1*Divider_Wall_Thickness):0));
 _external_tray_heigth = Dimensions_Are_External?Tray_Height:(Tray_Height+Floor_Thickness);
 _external_box_height = Dimensions_Are_External?Box_Top_Height:(Box_Top_Height+Floor_Thickness);
 
 _internal_tray_length = !Dimensions_Are_External?Tray_Length:(Tray_Length-2*Tray_Wall_Thickness);
-_internal_tray_width = !Dimensions_Are_External?Tray_Width:(Tray_Width-2*Tray_Wall_Thickness);
+_internal_tray_width = !Dimensions_Are_External?Tray_Width+xtrw:((Tray_Width-2*Tray_Wall_Thickness));
 _internal_tray_heigth = !Dimensions_Are_External?Tray_Height:(Tray_Height-Floor_Thickness);
 _internal_box_height = !Dimensions_Are_External?Box_Top_Height:(Box_Top_Height+Floor_Thickness);
 
@@ -255,8 +268,8 @@ module mkshell(length, width, height, wall, c_radius, offset=0, offset2=0, pin_t
     l = length - offset;
     w = width - offset;
     h = height;
-    cyl_h = (pin_type!=1)?h:h+pin_height;
-    cyl_h_xlat = (pin_type!=1)?0:(pin_height/2);
+    cyl_h = h;
+    cyl_h_xlat = 0;
     radius = (with_pin_interlock)?
         (scaled_wall_thickness/2):c_radius;
     
@@ -270,60 +283,86 @@ module mkshell(length, width, height, wall, c_radius, offset=0, offset2=0, pin_t
                 rad = diam/2;
                 translate([l/2-radius-offset2/2, w/2-radius-offset2/2, cyl_h_xlat]) {
                     cylinder(cyl_h, r=radius, center=true, $fn=20);
-                    if (pin_type == 1) {
-                        translate([rad/2,-rad/2,height/2]) {
-                            cube([rad,rad,pin_height], center=true);
-                        }
-                        translate([-rad/2,rad/2,height/2]) {
-                            cube([rad,rad,pin_height], center=true);
-                        }
-                    }
                 }
                 translate([-l/2+radius+offset2/2, w/2-radius-offset2/2, cyl_h_xlat]) {
                     cylinder(cyl_h, r=radius, center=true, $fn=20);
-                    if (pin_type == 1) {
-                        translate([-rad/2,-rad/2,height/2]) {
-                            cube([rad,rad,pin_height], center=true);
-                        }
-                        translate([rad/2,rad/2,height/2]) {
-                            cube([rad,rad,pin_height], center=true);
-                        }
-                    }
                 }
                 translate([l/2-radius-offset2/2, -w/2+radius+offset2/2, cyl_h_xlat]) {
                     cylinder(cyl_h, r=radius, center=true, $fn=20);
-                    if (pin_type == 1) {
-                        translate([-rad/2,-rad/2,height/2]) {
-                            cube([rad,rad,pin_height], center=true);
-                        }
-                        translate([rad/2,rad/2,height/2]) {
-                            cube([rad,rad,pin_height], center=true);
-                        }
-                    }
                 }
                 translate([-l/2+radius+offset2/2, -w/2+radius+offset2/2, cyl_h_xlat]) {
                     cylinder(cyl_h, r=radius, center=true, $fn=20);
-                    if (pin_type == 1) {
-                        translate([rad/2,-rad/2,height/2]) {
-                            cube([rad,rad,pin_height], center=true);
-                        }
-                        translate([-rad/2,rad/2,height/2]) {
-                            cube([rad,rad,pin_height], center=true);
-                        }
+                }
+            }
+        }
+    }
+}
+
+module make_box_top_pin_interlock(length, width, height, wall, c_radius, pin_type=0) {
+    pin_height = scaled_box_top_interlock_height;
+    cyl_h = pin_height;
+    cyl_h_xlat = height + ((pin_type!=1)?-pin_height/2:(pin_height/2))+0.001;
+    radius = (with_pin_interlock)?
+        (scaled_wall_thickness/2):c_radius;
+    
+    union() {
+        if (radius > 0) {
+            // Create the rounded corners
+            diam = 2*radius;
+            rad = diam/2;
+            translate([length/2-radius, width/2-radius, cyl_h_xlat]) {
+                cylinder(cyl_h, r=radius, center=true, $fn=20);
+                if (pin_type == 1) {
+                    translate([rad/2,-rad/2,0]) {
+                        cube([rad,rad,pin_height], center=true);
+                    }
+                    translate([-rad/2,rad/2,0]) {
+                        cube([rad,rad,pin_height], center=true);
+                    }
+                }
+            }
+            translate([-length/2+radius, width/2-radius, cyl_h_xlat]) {
+                cylinder(cyl_h, r=radius, center=true, $fn=20);
+                if (pin_type == 1) {
+                    translate([-rad/2,-rad/2,0]) {
+                        cube([rad,rad,pin_height], center=true);
+                    }
+                    translate([rad/2,rad/2,0]) {
+                        cube([rad,rad,pin_height], center=true);
+                    }
+                }
+            }
+            translate([length/2-radius, -width/2+radius, cyl_h_xlat]) {
+                cylinder(cyl_h, r=radius, center=true, $fn=20);
+                if (pin_type == 1) {
+                    translate([-rad/2,-rad/2,0]) {
+                        cube([rad,rad,pin_height], center=true);
+                    }
+                    translate([rad/2,rad/2,0]) {
+                        cube([rad,rad,pin_height], center=true);
+                    }
+                }
+            }
+            translate([-length/2+radius, -width/2+radius, cyl_h_xlat]) {
+                cylinder(cyl_h, r=radius, center=true, $fn=20);
+                if (pin_type == 1) {
+                    translate([rad/2,-rad/2,0]) {
+                        cube([rad,rad,pin_height], center=true);
+                    }
+                    translate([-rad/2,rad/2,0]) {
+                        cube([rad,rad,pin_height], center=true);
                     }
                 }
             }
         }
         if (pin_type==2) {
             if (radius > 0) {
-
-                pg = 0.5;
-                xlat = (height-(pin_height+pg)) / 2 + 0.001;
-                adj = pg + 0.002;
+                xlat = height - pin_height/2 + 0.001;
+                adj = 0.0;
                 diam = 2*(radius+scaled_interlock_gap);
                 rad = diam/2;
                 // Create the rounded corners
-                translate([l/2-radius-offset2/2, w/2-radius-offset2/2, xlat]) {
+                translate([length/2-radius, width/2-radius, xlat]) {
                     cylinder(pin_height+adj, r=diam/2, center=true, $fn=20);
                     translate([rad,0,0]) {
                         cube([diam,diam,pin_height+adj], center=true);
@@ -332,7 +371,7 @@ module mkshell(length, width, height, wall, c_radius, offset=0, offset2=0, pin_t
                         cube([diam,diam,pin_height+adj], center=true);
                     }
                 }
-                translate([-l/2+radius+offset2/2, w/2-radius-offset2/2, xlat]) {
+                translate([-length/2+radius, width/2-radius, xlat]) {
                     cylinder(pin_height+adj, r=diam/2, center=true, $fn=20);
                     translate([-rad,0,0]) {
                         cube([diam,diam,pin_height+adj], center=true);
@@ -341,7 +380,7 @@ module mkshell(length, width, height, wall, c_radius, offset=0, offset2=0, pin_t
                         cube([diam,diam,pin_height+adj], center=true);
                     }
                 }
-                translate([l/2-radius-offset2/2, -w/2+radius+offset2/2, xlat]) {
+                translate([length/2-radius, -width/2+radius, xlat]) {
                     cylinder(pin_height+adj, r=diam/2, center=true, $fn=20);
                     translate([rad,0,0]) {
                         cube([diam,diam,pin_height+adj], center=true);
@@ -350,7 +389,7 @@ module mkshell(length, width, height, wall, c_radius, offset=0, offset2=0, pin_t
                         cube([diam,diam,pin_height+adj], center=true);
                     }
                 }
-                translate([-l/2+radius+offset2/2, -w/2+radius+offset2/2, xlat]) {
+                translate([-length/2+radius, -width/2+radius, xlat]) {
                     cylinder(pin_height+adj, r=diam/2, center=true, $fn=20);
                     translate([-rad,0,0]) {
                         cube([diam,diam,pin_height+adj], center=true);
@@ -371,76 +410,76 @@ module mkshell(length, width, height, wall, c_radius, offset=0, offset2=0, pin_t
     understand, so, for now, they are two separate modules that are easier to grasp,
     but require a bit more maintenance.
  */
-module make_l_div(pos, height, from=0, to=1.0, hscale=1.0) {
-    tray_1_dim = _internal_tray_length * Scale_Units + scaled_divider_thickness;
+module make_l_div(pos, height, from=0, to=1.0, hscale=1.0, allow_half_walls=false, divt=scaled_divider_thickness) {
+    tray_1_dim = _internal_tray_width * Scale_Units + (allow_half_walls?0:divt);
     tray_2_dim = scaled_tray_length;
     // pos is a normalized position, from 0.0 to 1.0
     // from is a normalized start point, default 0.0 is one wall
     // end is a normalized end point, default 1.0 is the other wall
     // hscale can be used to scale the height of the division wall
     dim = tray_1_dim;
-    pos = (dim*pos) - (dim/2);
+    wpos = (tray_1_dim*pos) - (tray_1_dim/2);
 
     op_dim = tray_2_dim; 
-    start = (op_dim*from) - (op_dim/2) + ((from==0)?scaled_wall_thickness:scaled_divider_thickness)/2;
-    end = (op_dim*to) - (op_dim/2) - ((to==1)?scaled_wall_thickness:scaled_divider_thickness)/2;
+    start = (op_dim*from) - (op_dim/2) + ((from==0)?scaled_wall_thickness:divt)/2;
+    end = (op_dim*to) - (op_dim/2) - ((to==1)?scaled_wall_thickness:divt)/2;
     dlen = (end - start); 
     hdiv = (height-scaled_floor_thickness) * hscale * Divider_Wall_Height_Scale;
     xlat = hdiv/2+scaled_floor_thickness-0.001;
     union() {
-        translate([start+(dlen/2),pos,xlat]) {
-            cube([dlen,scaled_divider_thickness,hdiv], center=true);
+        translate([start+(dlen/2),wpos,xlat]) {
+            cube([dlen,divt,hdiv], center=true);
         }
         if (from > 0.0) {
-            translate([start,pos,xlat]) {
-                cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
+            translate([start,wpos,xlat]) {
+                cylinder(hdiv, r=divt/2, center=true, $fn=20);
             }
         }
         if (to < 1.0) {
-            translate([end,pos,xlat]) {
-                cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
+            translate([end,wpos,xlat]) {
+                cylinder(hdiv, r=divt/2, center=true, $fn=20);
             }
         }
     }
 }
 
-module make_w_div(pos, height, from=0, to=1.0, hscale=1.0) {
+module make_w_div(pos, height, from=0, to=1.0, hscale=1.0, allow_half_walls=false, divt=scaled_divider_thickness) {
     // pos is a normalized position, from 0.0 to 1.0
     // from is a normalized start point, default 0.0 is one wall
     // end is a normalized end point, default 1.0 is the other wall
     // hscale can be used to scale the height of the division wall
-    llen = _internal_tray_length * Scale_Units  + scaled_divider_thickness;
-    echo(pos=pos, llen=llen, _internal_tray_length=_internal_tray_length);
+    llen = _internal_tray_length * Scale_Units  + (allow_half_walls?0:divt);
+    //echo(pos=pos, llen=llen, _internal_tray_length=_internal_tray_length);
     lpos = (llen*pos) - (llen/2);
     _length = scaled_tray_width ;
-    wstart = (_length*from) - (_length/2) + ((from==0)?scaled_wall_thickness:scaled_divider_thickness)/2;
-    wend = (_length*to) - (_length/2) - ((to==1)?scaled_wall_thickness:scaled_divider_thickness)/2;
+    wstart = (_length*from) - (_length/2) + ((from==0)?scaled_wall_thickness:divt)/2;
+    wend = (_length*to) - (_length/2) - ((to==1)?scaled_wall_thickness:divt)/2;
     wlen = (wend-wstart);
     hdiv = (height-scaled_floor_thickness) * hscale * Divider_Wall_Height_Scale;
     xlat = hdiv/2+scaled_floor_thickness-0.001;
     union() {
         translate([lpos,wstart+(wlen/2),xlat]) {
-            cube([scaled_divider_thickness,wlen, hdiv], center=true);
+            cube([divt,wlen, hdiv], center=true);
         }
         if (from > 0.0) {
             translate([lpos,wstart,xlat]) {
-                cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
+                cylinder(hdiv, r=divt/2, center=true, $fn=20);
             }
         }
         if (to < 1.0) {
             translate([lpos,wend,xlat]) {
-                cylinder(hdiv, r=scaled_divider_thickness/2, center=true, $fn=20);
+                cylinder(hdiv, r=divt/2, center=true, $fn=20);
             }
         }
     }
 }
 
-module make_div(dir, pos, height, from=0, to=1.0, hscale=1.0) {
+module make_div(dir, pos, height, from=0, to=1.0, hscale=1.0, allow_half_walls=false, divt=scaled_divider_thickness) {
     if (dir == 0 || dir == "-" || dir == "length") {
-        make_l_div(pos, height, from, to, hscale);
+        make_l_div(pos, height, from, to, hscale, allow_half_walls, divt);
     }
     if (dir == 1 || dir == "|" || dir == "width") {
-        make_w_div(pos, height, from, to, hscale);
+        make_w_div(pos, height, from, to, hscale, allow_half_walls, divt);
     }
 }
 
@@ -553,20 +592,20 @@ module make_tray(height, wall_thickness, is_box_top=false) {
                     mkshell(scaled_tray_length, scaled_tray_width, height, 
                         wall_thickness, corner_radius, wall_thickness*2);
                 }
-                if (with_shell_internlock) {
-                    translate([0,0,height-scaled_box_top_interlock_height]) {
-                        ofs = wall_thickness+(scaled_interlock_gap/2);
-                        if (is_box_top) {
-                            mkshell(scaled_tray_length, scaled_tray_width, height+0.002, wall_thickness, scaled_corner_radius, ofs); 
-                        }
-                        else {
-                            difference() {
-                                mkshell(scaled_tray_length, scaled_tray_width, height, wall_thickness, scaled_corner_radius, -ofs); 
-                                mkshell(scaled_tray_length, scaled_tray_width, height+0.002, wall_thickness, scaled_corner_radius, ofs); 
-                            }
-                        }
-                    }
-                }
+                // if (with_shell_internlock) {
+                //     translate([0,0,height-scaled_box_top_interlock_height]) {
+                //         ofs = wall_thickness+(scaled_interlock_gap/2);
+                //         if (is_box_top) {
+                //             mkshell(scaled_tray_length, scaled_tray_width, height+0.002, wall_thickness, scaled_corner_radius, ofs); 
+                //         }
+                //         else {
+                //             difference() {
+                //                 mkshell(scaled_tray_length, scaled_tray_width, height, wall_thickness, scaled_corner_radius, -ofs); 
+                //                 mkshell(scaled_tray_length, scaled_tray_width, height+0.002, wall_thickness, scaled_corner_radius, ofs); 
+                //             }
+                //         }
+                //     }
+                // }
             };
         };
         // Make the bottom extrusion that allows this tray to interlock with a tray below for secure stacking.
@@ -574,6 +613,23 @@ module make_tray(height, wall_thickness, is_box_top=false) {
             translate([0,0, -scaled_interlock_height/2+0.001]) {
                 mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height, 
                 wall_thickness, scaled_corner_radius, wall_thickness*2, scaled_interlock_gap);
+            }
+        }
+    }
+}
+
+module make_box_top_shell_interlock(height, wall_thickness, is_box_top=false) {
+    if (with_shell_internlock) {
+        translate([0,0,(height/2) + height - scaled_box_top_interlock_height]) { //2*height - scaled_box_top_interlock_height]) {
+            ofs = wall_thickness + (is_box_top?-1:1)*scaled_interlock_gap/2;
+            if (is_box_top) {
+                mkshell(scaled_tray_length, scaled_tray_width, height+0.002, wall_thickness, scaled_corner_radius, ofs); 
+            }
+            else {
+                difference() {
+                    mkshell(scaled_tray_length, scaled_tray_width, height, wall_thickness, scaled_corner_radius, -ofs); 
+                    mkshell(scaled_tray_length, scaled_tray_width, height+0.002, wall_thickness, scaled_corner_radius, ofs); 
+                }
             }
         }
     }
@@ -591,6 +647,34 @@ module make_equal_cups(num_divs, height, orient="length", from=0.0, to=1.0) {
     increment = 1.0/num_divs;
     for ( i = [increment : increment : (1.0-increment)] ){
         make_div(orient, i, height, from);
+    }
+}
+
+module make_slot_walls(num_divs, height, orient="length", from=0.0, to=1.0, divt=scaled_divider_thickness) {
+    increment = 1.0/num_divs;
+
+    difference() {
+        for ( i = [0 : increment : 1.0] ){
+            make_div(orient, i, height, from=from, to=to, allow_half_walls = true, divt=divt);
+        }
+        
+        itw = _internal_tray_width * Scale_Units + scaled_wall_thickness;
+        sww = Storage_Wall_Width * Scale_Units;
+        cw = itw/Number_Of_Columns;
+        winc = 1.0/Number_Of_Columns;
+        hwall = scaled_divider_thickness/2;
+        for ( i = [0 : winc : 1.0-winc]) {
+            start = itw * i + sww;
+            end =  itw * (i+winc) - sww;
+            center = start + (end - start) / 2 - itw/2;
+            remove_width = end-start;
+            dc = cw - start - remove_width/2;
+            //echo(dc=dc);
+            //echo(i=i, start=start, end=end, center=center, remove_width=remove_width);
+            translate([0,center,scaled_tray_height/2+scaled_floor_thickness]) {
+                cube([_internal_tray_length*Scale_Units,remove_width,scaled_tray_height], center=true);
+            }
+        }
     }
 }
 
@@ -716,11 +800,34 @@ module make_corner_posts(height) {
 
 }
 
-module make_tray_cups(height) {
+module make_tray_cups(height, no_slots=false) {
     echo("Divider Wall Height:", (height*Divider_Wall_Height_Scale/Scale_Units));
 
     if (Build_Mode == "Square_Cups") {
         make_equal_cup_dividers(height);
+    }
+
+    if (Build_Mode == "Storage_Slots") {
+        min_per_slot_width = Storage_Slot_Width + Minimum_Storage_Slot_Separation;
+        num_slots_float = _internal_tray_length / min_per_slot_width;
+        num_slots = floor(num_slots_float);
+        tmp_total = min_per_slot_width * num_slots;
+        tmp_extra = _internal_tray_length - tmp_total;
+        //echo(tmp_total=tmp_total, tmp_extra=tmp_extra);
+        extra_per_slot = tmp_extra/num_slots; //Minimum_Storage_Slot_Separation * extra / num_slots;
+        //echo(min_per_slot_width=min_per_slot_width, num_slots_float=num_slots_float, num_slots=num_slots);
+        slot_separation = Minimum_Storage_Slot_Separation + extra_per_slot;
+        num_walls = num_slots;
+        //echo(extra_per_slot=extra_per_slot, slot_separation=slot_separation);
+        divt = Scale_Units * slot_separation;
+        //echo(scaled_divider_thickness=scaled_divider_thickness);
+        error = (num_slots) * (slot_separation+Storage_Slot_Width) - _internal_tray_length;
+        //echo(error=error);
+        echo("Total number of slots", num_slots*Number_Of_Columns);
+        make_equal_cups(Number_Of_Columns, height, "length");
+        if (no_slots == false) {
+            make_slot_walls(num_walls, height, "width", divt=divt);
+        }
     }
 
     if (Build_Mode == "Length_Width_Cups") {
@@ -809,11 +916,43 @@ module make_finger_slots() {
 }
 
 module make_box_top() {
-    make_tray(
-        scaled_box_top_height, 
+    union() {
+        difference() {
+            union() {
+                make_tray(
+                    scaled_box_top_height, 
+                    scaled_wall_thickness
+                );
+                if (With_Dividers) {
+                    make_tray_cups(scaled_box_top_height, no_slots=true);
+                }
+            }
+            if (with_shell_internlock) {
+                make_top_interlock(
+                    scaled_box_top_height, 
+                    is_box_top=true
+                );
+            }
+        }
+        if (with_pin_interlock) {
+            make_top_interlock(
+                scaled_box_top_height, 
+                is_box_top=true
+            );
+        }
+    }
+}
+
+module make_top_interlock(height, is_box_top = false) {
+    make_box_top_shell_interlock(
+        height,
         scaled_wall_thickness,
-        is_box_top=true
+        is_box_top
     );
+    pt = (with_pin_interlock)?(is_box_top?1:2):0;
+    if (pt != 0) {
+        make_box_top_pin_interlock(scaled_tray_length, scaled_tray_width, height, scaled_wall_thickness, scaled_corner_radius, pin_type=pt); 
+    }
 }
 
 //echo(Build_Mode)
@@ -828,11 +967,14 @@ else if (Build_Mode == "Tray_Lid") {
     make_lid();
 }
 else {
-    union() {
-        make_tray(scaled_tray_height, scaled_wall_thickness);
-        make_tray_cups(scaled_divider_height);
+    difference() {
+        union() {
+            make_tray(scaled_tray_height, scaled_wall_thickness);
+            make_tray_cups(scaled_divider_height);
+        }
+        make_finger_slots();
+        make_top_interlock(scaled_tray_height);
     }
-    make_finger_slots();
 }
 
 if (Build_Mode != "Tray_Lid" && Create_A_Lid == true) {
