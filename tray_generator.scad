@@ -153,15 +153,28 @@ Create_A_Box_Top = false;
 // Internal or external height of the box top, see "Dimensions Are External"
 Box_Top_Height = 0.75;
 
+// Create matching dividers in the box top.  Can provide additional stiffness on large tops.
 With_Dividers = false;
 
-Box_Top_Interlock_Type = "Pin"; // ["Pin", "Shell"]
+// Choose between corner-pins and overlappping shell edge.
+Box_Top_Interlock_Type = "Shell"; // ["Pin", "Shell", "None"]
 
-Box_Top_Interlock_Height = 0.10; // [0.0:0.01:1]
+Box_Top_Interlock_Height = 0.15; // [0.0:0.01:1]
+
+// With "shell" interlocks, create one or more finger detents to help open the box.  If you choose two they will be on opposite sides of the box. These are created in the main box, not the box top.
+Finger_Detents = "One"; // ["None", "One", "Two"]
+
+Detent_Orientation = "Length"; // ["Length", "Width"]
+
+// A fuzzy knob to tune the height of the finger detent.
+Detent_Height = 0.95; // [0.0: 0.01 : 1.0] 
+
+// A fuzzy know to tune the width of the detent.
+Detent_Width = 0.5; // [0.0: 0.01: 1.0]
 
 /* [Interlocking Parameters] */
 // Specifies the height of the interlock panel extruded below the tray (and also the distance that the top of the dividers are below the upper tray edge. Specify 0 for non-interlocking stackers. You can still stack them, they just won't interlock.).
-Interlock_Height = 0.1; // [0.0:0.01:0.25]
+Interlock_Height = 0.0; // [0.0:0.01:0.25]
 
 // Only used when Interlock_Height==0, and intended for use with interlocking lids and trays, recessed lids, or to give a little more recess to insert trays.  When Interlock_Height > 0, it is used instead.
 Interlock_Divider_Wall_Recess = 0.0; // [0.0:0.01:0.25]
@@ -953,14 +966,44 @@ module make_top_interlock(height, is_box_top = false) {
     if (pt != 0) {
         make_box_top_pin_interlock(scaled_tray_length, scaled_tray_width, height, scaled_wall_thickness, scaled_corner_radius, pin_type=pt); 
     }
+    if (Create_A_Box_Top && with_shell_internlock &&  Finger_Detents != "None" && !is_box_top) {
+        base_r = 4;
+        radius = Detent_Width * base_r * Scale_Units;
+        echo(radius=radius);
+        // Using sqrt() makes the fuzzy knob a little more linear in response.
+        factor = sqrt(Detent_Height) * radius;
+        xlat = (Detent_Orientation == "Length")?(scaled_tray_length/2+radius
+        -scaled_wall_thickness/2
+        -scaled_interlock_gap/2):0;
+
+        ylat = (Detent_Orientation == "Width")?(scaled_tray_width/2+radius
+        -scaled_wall_thickness/2
+        -scaled_interlock_gap/2):0;
+
+        translate([xlat,ylat,0.001]) {
+            //cylinder(h=height-(Box_Top_Interlock_Height*Scale_Units), 0, 3*Scale_Units, $fn=40);
+            cylinder(height-(Box_Top_Interlock_Height*Scale_Units), factor, radius, $fn=65);
+        }
+        if (Finger_Detents == "Two") {
+            translate([-xlat,-ylat,0.001]) {
+                //cylinder(h=height-(Box_Top_Interlock_Height*Scale_Units), 0, 3*Scale_Units, $fn=40);
+                cylinder(height-(Box_Top_Interlock_Height*Scale_Units), factor, radius, $fn=65);
+            }
+        }
+    }
 }
 
 //echo(Build_Mode)
 if (Build_Mode == "Just_the_Tray") {
-    make_tray(scaled_tray_height, scaled_wall_thickness);
-    if (Add_Corner_Posts == true) {
-        echo("scaled_divider_height",scaled_divider_height)
-        make_corner_posts(scaled_divider_height);
+    difference() {
+        union() {
+            make_tray(scaled_tray_height, scaled_wall_thickness);
+            if (Add_Corner_Posts == true) {
+                echo("scaled_divider_height",scaled_divider_height)
+                make_corner_posts(scaled_divider_height);
+            }
+        }
+        make_top_interlock(scaled_tray_height);
     }
 }
 else if (Build_Mode == "Tray_Lid") {
