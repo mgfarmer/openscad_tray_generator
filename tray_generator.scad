@@ -1,39 +1,40 @@
+/* [Primary Tray Parameters] */
 // Specifies the measurement system and scale you want to use for your trays.  All dimensions below will be in these units.  There are presets called "imperal defaults" and "metric defaults" that make good starting points. 
 Scale_Units = 25.4; // [25.4:inch, 10.0:cm]
 
 // When checked, the length, width, and height dimension are the external dimensions of the tray, when not checked they are the internal dimensions of the tray and the external dimensions will be adjusted accordingly.
 Dimensions_Are_External = true;
 
-// Specifies the external tray length in the select unit scale
+// Specifies the tray length in the select unit scale.
 Tray_Length = 8.0; // [0.00:0.01:20.00]
 
-// Specifies the external tray width in the select unit scale
+// Specifies the tray width in the select unit scale. In "Storage Slot" mode this dimension represents the total internal dimension adjusted for divider wall thickenss. In other modes, just know that each divider wall reduces the available internal space.
 Tray_Width = 4.0; // [0.00:0.01:20.00]
 
-// Specifies the external tray height in the select unit scale.  Stackable trays (Interlock Height > 0) will increase the actual height by the height of the interlocking extrusion.
+// Specifies the tray height in the select unit scale.  Stackable trays (Interlock Height > 0) will increase the actual height by the height of the interlocking extrusion.
 Tray_Height = 1.0; // [0.00:0.01:20.00]
 
-// Select a build mode, then use the controls in the same named sections to specify generation parameters
+// Select a build mode then use the controls in the same named sections to specify generation parameters
 Build_Mode = "Just_the_Tray"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Storage_Slots", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
 
 
 /* [Square Cups] */
 // If not 0, specifies the size of square cups to be create, both tray_length and tray_width should be a multiple of this value.  If your tray is 8x4 and you use a cup size of 1 you will get 32 cups. 
-Square_Cup_Size = 1; //[0.0:0.5:10]
+Square_Cup_Size = 1; //[0.0:0.1:10]
 
 /* [Length/Width Cups] */
 // This create the specified number of equal length cups along the length of the tray.
-Cups_Along_Length = 1; //[1.0:1.0:80]
+Cups_Along_Length = 1; //[1.0:1.0:20]
 
 // This create the specified number of equal width cups across the width of the tray.
-Cups_Across_Width = 1; //[1.0:1.0:80]
+Cups_Across_Width = 1; //[1.0:1.0:20]
 
 /* [Length/Width Cup Ratios] */
 // This creates cup dividers at the given ratios.  For instance [1,1] makes two equal length divisions, and [1,1,2] makes 2 equal length small divisions and one division that is twice as long.
-Lengthwise_Cup_Ratios = [1,1,1,1,1];
+Lengthwise_Cup_Ratios = [1,1,2,1,1];
 
 // This creates cup dividers at the given ratios.  For instance [1,1] makes two equal width divisions, and [1,1,2] makes 2 equal width small divisions and one divisions that is twice as wide.
-Widthwise_Cup_Ratios = [1,1,1,1,1];
+Widthwise_Cup_Ratios = [1,1,2,1,1];
 
 /* [Storage Slots] */
 Storage_Slot_Width = 0.08; //[0.02 : 0.001 : 1]
@@ -161,7 +162,7 @@ Box_Top_Interlock_Type = "Shell"; // ["Pin", "Shell", "None"]
 
 Box_Top_Interlock_Height = 0.15; // [0.0:0.01:1]
 
-// With "shell" interlocks, create one or more finger detents to help open the box.  If you choose two they will be on opposite sides of the box. These are created in the main box, not the box top.
+// Create one or more finger detents to help open the box.  If you choose two they will be on opposite sides of the box. These are created in the main box, not the box top.
 Finger_Detents = "One"; // ["None", "One", "Two"]
 
 Detent_Orientation = "Length"; // ["Length", "Width"]
@@ -188,7 +189,7 @@ module __Customizer_Limit__ () {}
 
 Perimeter_Interlock = false;
 with_pin_interlock = Create_A_Box_Top && Box_Top_Interlock_Type == "Pin";
-with_shell_internlock = Create_A_Box_Top && Box_Top_Interlock_Type == "Shell";
+with_shell_interlock = Create_A_Box_Top && Box_Top_Interlock_Type == "Shell";
 with_storage_slots = Build_Mode == "Storage_Slots";
 
 Label_Lid_Height = 0.3; // mm
@@ -437,8 +438,13 @@ module make_l_div(pos, height, from=0, to=1.0, hscale=1.0, allow_half_walls=fals
     start = (op_dim*from) - (op_dim/2) + ((from==0)?scaled_wall_thickness:divt)/2;
     end = (op_dim*to) - (op_dim/2) - ((to==1)?scaled_wall_thickness:divt)/2;
     dlen = (end - start); 
-    hdiv = (height-scaled_floor_thickness) * hscale * Divider_Wall_Height_Scale;
-    xlat = hdiv/2+scaled_floor_thickness-0.001;
+    tmp_hdiv = (height-scaled_floor_thickness) * hscale * Divider_Wall_Height_Scale;
+    hdiv = tmp_hdiv<0?height:tmp_hdiv;
+    sft = tmp_hdiv<0?0:scaled_floor_thickness;
+
+    echo(height=height, hdiv=hdiv);
+
+    xlat = hdiv/2+sft-0.001;
     union() {
         translate([start+(dlen/2),wpos,xlat]) {
             cube([dlen,divt,hdiv], center=true);
@@ -468,8 +474,10 @@ module make_w_div(pos, height, from=0, to=1.0, hscale=1.0, allow_half_walls=fals
     wstart = (_length*from) - (_length/2) + ((from==0)?scaled_wall_thickness:divt)/2;
     wend = (_length*to) - (_length/2) - ((to==1)?scaled_wall_thickness:divt)/2;
     wlen = (wend-wstart);
-    hdiv = (height-scaled_floor_thickness) * hscale * Divider_Wall_Height_Scale;
-    xlat = hdiv/2+scaled_floor_thickness-0.001;
+    tmp_hdiv = (height-scaled_floor_thickness) * hscale * Divider_Wall_Height_Scale;
+    hdiv = tmp_hdiv<0?height:tmp_hdiv;
+    sft = tmp_hdiv<0?0:scaled_floor_thickness;
+    xlat = hdiv/2+sft-0.001;
     union() {
         translate([lpos,wstart+(wlen/2),xlat]) {
             cube([divt,wlen, hdiv], center=true);
@@ -536,19 +544,23 @@ module make_lid() {
                     }
                 }
                 if (Label_Lid == true && Label_Lid_Style == "Raised") {
-                    translate([0,0,scaled_lid_thickness-0.001]) {
-                        //scale the dividers in XY so they dont extend past a recessed tray edge.
-                        scale([0.98,0.98,1]) {
-                            make_tray_cups(label_div_offset);
+                    difference() {
+                        translate([0,0,scaled_lid_thickness-0.001]) {
+                            //scale the dividers in XY so they dont extend past a recessed tray edge.
+                            scale([0.95,0.95,1]) {
+                                make_tray_cups(label_div_offset);
+                            }
                         }
                     }
                 }
             }
 
              if (Label_Lid == true && Label_Lid_Style == "Recessed") {
-                translate([0,0,scaled_lid_thickness-0.5]) {
-                    scale([0.98,0.98,1]) {
-                         make_tray_cups(10);
+                difference() {
+                    translate([0,0,-0.5]) {
+                        scale([0.95,0.95,1]) {
+                            make_tray_cups(1);
+                        }
                     }
                  }
             }
@@ -605,24 +617,10 @@ module make_tray(height, wall_thickness, is_box_top=false) {
                     mkshell(scaled_tray_length, scaled_tray_width, height, 
                         wall_thickness, corner_radius, wall_thickness*2);
                 }
-                // if (with_shell_internlock) {
-                //     translate([0,0,height-scaled_box_top_interlock_height]) {
-                //         ofs = wall_thickness+(scaled_interlock_gap/2);
-                //         if (is_box_top) {
-                //             mkshell(scaled_tray_length, scaled_tray_width, height+0.002, wall_thickness, scaled_corner_radius, ofs); 
-                //         }
-                //         else {
-                //             difference() {
-                //                 mkshell(scaled_tray_length, scaled_tray_width, height, wall_thickness, scaled_corner_radius, -ofs); 
-                //                 mkshell(scaled_tray_length, scaled_tray_width, height+0.002, wall_thickness, scaled_corner_radius, ofs); 
-                //             }
-                //         }
-                //     }
-                // }
             };
         };
         // Make the bottom extrusion that allows this tray to interlock with a tray below for secure stacking.
-        if (scaled_interlock_height > 0) {
+        if (!is_box_top && scaled_interlock_height > 0) {
             translate([0,0, -scaled_interlock_height/2+0.001]) {
                 mkshell(scaled_tray_length, scaled_tray_width, scaled_interlock_height, 
                 wall_thickness, scaled_corner_radius, wall_thickness*2, scaled_interlock_gap);
@@ -632,7 +630,7 @@ module make_tray(height, wall_thickness, is_box_top=false) {
 }
 
 module make_box_top_shell_interlock(height, wall_thickness, is_box_top=false) {
-    if (with_shell_internlock) {
+    if (with_shell_interlock) {
         translate([0,0,(height/2) + height - scaled_box_top_interlock_height]) { //2*height - scaled_box_top_interlock_height]) {
             ofs = wall_thickness + (is_box_top?-1:1)*scaled_interlock_gap/2;
             if (is_box_top) {
@@ -934,13 +932,14 @@ module make_box_top() {
             union() {
                 make_tray(
                     scaled_box_top_height, 
-                    scaled_wall_thickness
+                    scaled_wall_thickness,
+                    is_box_top=true
                 );
                 if (With_Dividers) {
                     make_tray_cups(scaled_box_top_height, no_slots=true);
                 }
             }
-            if (with_shell_internlock) {
+            if (with_shell_interlock) {
                 make_top_interlock(
                     scaled_box_top_height, 
                     is_box_top=true
@@ -966,7 +965,7 @@ module make_top_interlock(height, is_box_top = false) {
     if (pt != 0) {
         make_box_top_pin_interlock(scaled_tray_length, scaled_tray_width, height, scaled_wall_thickness, scaled_corner_radius, pin_type=pt); 
     }
-    if (Create_A_Box_Top && with_shell_internlock &&  Finger_Detents != "None" && !is_box_top) {
+    if (Create_A_Box_Top && Finger_Detents != "None" && !is_box_top) {
         base_r = 4;
         radius = Detent_Width * base_r * Scale_Units;
         echo(radius=radius);
@@ -980,14 +979,17 @@ module make_top_interlock(height, is_box_top = false) {
         -scaled_wall_thickness/2
         -scaled_interlock_gap/2):0;
 
+        c_ht = with_shell_interlock?height-(Box_Top_Interlock_Height*Scale_Units):
+            height;
+
         translate([xlat,ylat,0.001]) {
             //cylinder(h=height-(Box_Top_Interlock_Height*Scale_Units), 0, 3*Scale_Units, $fn=40);
-            cylinder(height-(Box_Top_Interlock_Height*Scale_Units), factor, radius, $fn=65);
+            cylinder(c_ht, factor, radius, $fn=65);
         }
         if (Finger_Detents == "Two") {
             translate([-xlat,-ylat,0.001]) {
                 //cylinder(h=height-(Box_Top_Interlock_Height*Scale_Units), 0, 3*Scale_Units, $fn=40);
-                cylinder(height-(Box_Top_Interlock_Height*Scale_Units), factor, radius, $fn=65);
+                cylinder(c_ht, factor, radius, $fn=65);
             }
         }
     }
