@@ -507,6 +507,7 @@ module make_div(dir, pos, height, from=0, to=1.0, hscale=1.0, allow_half_walls=f
 module make_lid() {
     label_div_offset = (Label_Lid == true)?Label_Lid_Height:0.0;
     interlock_height = (scaled_interlock_height==0)?scaled_Interlock_Divider_Wall_Recess:scaled_interlock_height;
+    label_scale = 1.0; //scaled_lid_thickness > 0?1.0:0.95;
     rotate([0,0,0]) {
         difference() {
             union() {
@@ -545,10 +546,23 @@ module make_lid() {
                 }
                 if (Label_Lid == true && Label_Lid_Style == "Raised") {
                     difference() {
-                        translate([0,0,scaled_lid_thickness-0.001]) {
-                            //scale the dividers in XY so they dont extend past a recessed tray edge.
-                            scale([0.95,0.95,1]) {
-                                make_tray_cups(label_div_offset);
+                        intersection() {
+                            translate([0,0,scaled_lid_thickness-0.001]) {
+                                //scale the dividers in XY so they dont extend past a recessed tray edge.
+                                scale([label_scale,label_scale,1]) {
+                                    make_tray_cups(label_div_offset);
+                                }
+                            }
+                            if (scaled_lid_thickness > 0) {
+                                translate([0,0,scaled_lid_thickness]) {
+                                    mkshell(scaled_tray_length, scaled_tray_width, scaled_lid_thickness+2, scaled_wall_thickness, scaled_corner_radius); 
+                                };
+                            }
+                            else {
+                                translate([0,0,scaled_lid_thickness]) {
+                                    mkshell(scaled_tray_length-scaled_wall_thickness*2-scaled_interlock_gap, 
+                                        scaled_tray_width-scaled_wall_thickness*2-scaled_interlock_gap, scaled_lid_thickness+2, scaled_wall_thickness, scaled_corner_radius); 
+                                };
                             }
                         }
                     }
@@ -556,14 +570,18 @@ module make_lid() {
             }
 
              if (Label_Lid == true && Label_Lid_Style == "Recessed") {
-                difference() {
-                    translate([0,0,-0.5]) {
-                        scale([0.95,0.95,1]) {
-                            make_tray_cups(1);
+                intersection() {
+                    translate([0,0,scaled_lid_thickness-0.5]) {
+                        scale([label_scale,label_scale,20]) {
+                            make_tray_cups(label_div_offset);
                         }
                     }
-                 }
-            }
+                    translate([0,0, scaled_lid_thickness-0.5]) {
+                        mkshell(scaled_tray_length, scaled_tray_width, interlock_height, 
+                        scaled_wall_thickness, scaled_corner_radius, scaled_wall_thickness*2, scaled_interlock_gap);
+                    }
+                }
+             }
 
             // Create subtractive handles, if specified.
             if (Lid_Handle_Style == "Finger_Holes") {
@@ -984,12 +1002,12 @@ module make_top_interlock(height, is_box_top = false) {
 
         translate([xlat,ylat,0.001]) {
             //cylinder(h=height-(Box_Top_Interlock_Height*Scale_Units), 0, 3*Scale_Units, $fn=40);
-            cylinder(c_ht, factor, radius, $fn=65);
+            cylinder(c_ht, factor, radius, $fn=64);
         }
         if (Finger_Detents == "Two") {
             translate([-xlat,-ylat,0.001]) {
                 //cylinder(h=height-(Box_Top_Interlock_Height*Scale_Units), 0, 3*Scale_Units, $fn=40);
-                cylinder(c_ht, factor, radius, $fn=65);
+                cylinder(c_ht, factor, radius, $fn=64);
             }
         }
     }
