@@ -335,8 +335,6 @@ module make_l_div(pos, height, from=0, to=1.0, hscale=1.0, allow_half_walls=fals
     hdiv = tmp_hdiv<0?height:tmp_hdiv;
     sft = tmp_hdiv<0?0:scaled_floor_thickness;
 
-    echo(height=height, hdiv=hdiv);
-
     xlat = hdiv/2+sft-0.001;
     union() {
         translate([start+(dlen/2),wpos,xlat]) {
@@ -868,7 +866,6 @@ module make_top_interlock(height, is_box_top = false) {
     if (Create_A_Box_Top && Finger_Detents != "None" && !is_box_top) {
         base_r = 4;
         radius = Detent_Width * base_r * Scale_Units;
-        echo(radius=radius);
         // Using sqrt() makes the fuzzy knob a little more linear in response.
         factor = sqrt(Detent_Height) * radius;
         xlat = (Detent_Orientation == "Length")?(scaled_tray_length/2+radius
