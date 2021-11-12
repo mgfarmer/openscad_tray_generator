@@ -1,4 +1,4 @@
-/* [Primary Tray Parameters] */
+/* [Tray Dimensions and Mode] */
 // Specifies the measurement system and scale you want to use for your trays.  All dimensions below will be in these units.  There are presets called "imperal defaults" and "metric defaults" that make good starting points. 
 Scale_Units = 25.4; // [25.4:inch, 10.0:cm]
 
@@ -18,38 +18,38 @@ Tray_Height = 1.0; // [0.00:0.01:20.00]
 Build_Mode = "Just_the_Tray"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Storage_Slots", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
 
 
-/* [Square Cups] */
+/* [Build Mode: Square Cups] */
 // If not 0, specifies the size of square cups to be create, both tray_length and tray_width should be a multiple of this value.  If your tray is 8x4 and you use a cup size of 1 you will get 32 cups. 
 Square_Cup_Size = 1; //[0.0:0.1:10]
 
-/* [Length/Width Cups] */
+/* [Build Mode: Length/Width Cups] */
 // This create the specified number of equal length cups along the length of the tray.
 Cups_Along_Length = 1; //[1.0:1.0:20]
 
 // This create the specified number of equal width cups across the width of the tray.
 Cups_Across_Width = 1; //[1.0:1.0:20]
 
-/* [Length/Width Cup Ratios] */
+/* [Build Mode: Length/Width Cup Ratios] */
 // This creates cup dividers at the given ratios.  For instance [1,1] makes two equal length divisions, and [1,1,2] makes 2 equal length small divisions and one division that is twice as long.
 Lengthwise_Cup_Ratios = [1,1,2,1,1];
 
 // This creates cup dividers at the given ratios.  For instance [1,1] makes two equal width divisions, and [1,1,2] makes 2 equal width small divisions and one divisions that is twice as wide.
 Widthwise_Cup_Ratios = [1,1,2,1,1];
 
-/* [Storage Slots] */
+/* [Build Mode: Storage Slots] */
 Storage_Slot_Width = 0.08; //[0.02 : 0.001 : 1]
 Minimum_Storage_Slot_Separation = 0.08; //[0.02 : 0.001 : 1]
 Storage_Wall_Width = 0.25;
 Number_Of_Columns = 1;
 
-/* [Custom Divisions per Column or Row] */
+/* [Build Mode: Custom Divisions per Column or Row] */
 // It is strongly advised that you build this expression in a real text editor, then paste it here.
 Custom_Col_Row_Ratios = [1,5,2,2,2,1.5,2,0,3,0,3,0,3,0,2,0,5];
 
 // M2-M3: ["|", 5, 2.5, 2, 3, 3, 3, "*", 3, "*", 3, "*", 3, "*", 2, "*", 5]
 // M4:    ["|", 5, 2.5, 2, 3, 3, 3, "*", 4, "*", 4, "*", 3, "*", 2, "*", 5]
 
-/* [Custom Ratio Divisions] */
+/* [Build Mode: Custom Ratio Divisions] */
 // It is strongly advised that you build this expression in a real text editor, then paste it here.
 Custom_Division_List = [ "-", 0.333, 0.0, 0.666, "-", 0.666, 0.333, 1.0, "|", 0.333, 0.333, 1.0, "|", 0.666, 0.0, 0.666 ];
 //[[ "-", 0.66, [0.0, 0.66]],[ "|", 0.66, [0.66, 1.0]]];
@@ -72,25 +72,6 @@ Divider_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
 Divider_Wall_Height_Scale = 1.0;  // [0.05:0.01:1.50]
 
 
-/* [Tray Insert Parameters] */
-
-// Size this tray to fit into a bigger tray.  Tray Length and Width is the size of the tray it will fit into. This tray will be just small enough to rest inside the outer tray. The outer tray should have division walls for the insert tray to rest on, that are sized down appropriately, or add corner posts. See "Insert Tray Heighth". Using this will force the Interlock Height to 0
-Make_Insert_Tray = false;
-
-// Apply this to the main tray.  Use this to adapt a larger tray to accespt an smaller insert tray. Set this to be the same height as the height of the insert tray. 
-Insert_Tray_Height = 0.0;  // [0.00:0.05:2.00]
-
-// Apply this to the insert tray. Use this to specify how much free space is between the inner wall of the outer tray and the outer wall of the inner tray. Larger values will create a looser fit.
-Insert_Tray_Gap = 0.03;  // [0.00:0.005:2.00]
-
-// Corner posts give the insert something to rest on if you don't want any dividers walls in the main tray.
-Add_Corner_Posts = false;
-
-// Size of the corner post
-Corner_Post_Size = 0.2; //[0.1:0.05:1.5]
-
-
-
 /* [Divider Wall Finger Slots] */
 
 // Create finger slots in divider walls.
@@ -110,6 +91,24 @@ Finger_Slot_Radius = 1.0; // [0.00:0.01:10.00]
 
 // Normalized lift of the slot above the floor
 Finger_Slot_Lift = 0.2; // [0.00:0.01:1.00]
+
+/* [Tray Insert Parameters] */
+
+// Size this tray to fit into a bigger tray.  Tray Length and Width is the size of the tray it will fit into. This tray will be just small enough to rest inside the outer tray. The outer tray should have division walls for the insert tray to rest on, that are sized down appropriately, or add corner posts. See "Insert Tray Heighth". Using this will force the Interlock Height to 0
+Make_Insert_Tray = false;
+
+// Apply this to the main tray.  Use this to adapt a larger tray to accespt an smaller insert tray. Set this to be the same height as the height of the insert tray. 
+Insert_Tray_Height = 0.0;  // [0.00:0.05:2.00]
+
+// Apply this to the insert tray. Use this to specify how much free space is between the inner wall of the outer tray and the outer wall of the inner tray. Larger values will create a looser fit.
+Insert_Tray_Gap = 0.03;  // [0.00:0.005:2.00]
+
+// Corner posts give the insert something to rest on if you don't want any dividers walls in the main tray.
+Add_Corner_Posts = false;
+
+// Size of the corner post
+Corner_Post_Size = 0.2; //[0.1:0.05:1.5]
+
 
 /* [Lid Parameters] */
 // Create a lid for your tray.  (See Lid and Interlock Parameters).
