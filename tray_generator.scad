@@ -6,28 +6,28 @@ Scale_Units = 25.4; // [25.4:inch, 10.0:cm]
 Dimensions_Are_External = true;
 
 // Specifies the tray length in the select unit scale.
-Tray_Length = 8.0; // [0.00:0.01:20.00]
+Tray_Length = 8.00;  // [0.0:0.001:25.00]
 
 // Specifies the tray width in the select unit scale. In "Storage Slot" mode this dimension represents the total internal dimension adjusted for divider wall thickenss. In other modes, just know that each divider wall reduces the available internal space.
-Tray_Width = 4.0; // [0.00:0.01:20.00]
+Tray_Width = 4.00; // [0.0:0.001:25.00]
 
 // Specifies the tray height in the select unit scale.  Stackable trays (Interlock Height > 0) will increase the actual height by the height of the interlocking extrusion.
-Tray_Height = 1.0; // [0.00:0.01:20.00]
+Tray_Height = 1.00; // [0.0:0.001:25.00]
 
 // Select a build mode then use the controls in the same named sections to specify generation parameters
 Build_Mode = "Just_the_Tray"; // ["Just_the_Tray", "Square_Cups", "Length_Width_Cups", "Length_Width_Cup_Ratios", "Storage_Slots", "Custom_Divisions_per_Column_or_Row", "Custom_Ratio_Divisions", "Tray_Lid"]
 
 
 /* [Build Mode: Square Cups] */
-// If not 0, specifies the size of square cups to be create, both tray_length and tray_width should be a multiple of this value.  If your tray is 8x4 and you use a cup size of 1 you will get 32 cups. 
-Square_Cup_Size = 1; //[0.0:0.1:10]
+// If not 0, specifies the size of square cups to be created. Both tray_length and tray_width must be an integer multiple of this value.  If your tray is 8x4 and you use a cup size of 1 you will get 32 cups. 
+Square_Cup_Size = 1; //[0.0:0.001:10]
 
 /* [Build Mode: Length/Width Cups] */
 // This create the specified number of equal length cups along the length of the tray.
-Cups_Along_Length = 1; //[1.0:1.0:20]
+Cups_Along_Length = 1; //[1.0:1.0:40]
 
 // This create the specified number of equal width cups across the width of the tray.
-Cups_Across_Width = 1; //[1.0:1.0:20]
+Cups_Across_Width = 1; //[1.0:1.0:40]
 
 /* [Build Mode: Length/Width Cup Ratios] */
 // This creates cup dividers at the given ratios.  For instance [1,1] makes two equal length divisions, and [1,1,2] makes 2 equal length small divisions and one division that is twice as long.
@@ -37,9 +37,9 @@ Lengthwise_Cup_Ratios = [1,1,2,1,1];
 Widthwise_Cup_Ratios = [1,1,2,1,1];
 
 /* [Build Mode: Storage Slots] */
-Storage_Slot_Width = 0.08; //[0.02 : 0.001 : 1]
-Minimum_Storage_Slot_Separation = 0.08; //[0.02 : 0.001 : 1]
-Storage_Wall_Width = 0.25;
+Storage_Slot_Width = 0.08; // [0.02 : 0.001 : 1]
+Minimum_Storage_Slot_Separation = 0.08; // [0.02 : 0.001 : 1]
+Storage_Wall_Width = 0.25; // [0.02 : 0.001 : 1]
 Number_Of_Columns = 1;
 
 /* [Build Mode: Custom Divisions per Column or Row] */
@@ -56,20 +56,20 @@ Custom_Division_List = [ "-", 0.333, 0.0, 0.666, "-", 0.666, 0.333, 1.0, "|", 0.
 
 /* [Outer Wall Parameters] */
 // Specifies how thick the outer wall of the tray will be
-Tray_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
+Tray_Wall_Thickness = 0.07; // [0.05:0.001:0.50]
 
 // Specifies how thick the floor will be.
-Floor_Thickness = 0.07; // [0.05:0.01:0.50]
+Floor_Thickness = 0.07; // [0.05:0.001:0.50]
 
 // Specifies the "roundess" of tray corners Set to 0 for square corners. Set to 1.0 for the most rounding.  This is a ratio of the wall thickness. This is overriden with making box tops with interlocking pins.
-Corner_Roundness = 1.0; // [0.00:0.01:1.00]
+Corner_Roundness = 1.0; // [0.00:0.001:1.00]
 
 /* [Divider Wall Parameters] */
 // Specifies how thick each internal cup divider will be.
-Divider_Wall_Thickness = 0.07; // [0.05:0.01:0.50]
+Divider_Wall_Thickness = 0.07; // [0.05:0.001:0.50]
 
 // A fuzzy knob to scale the wall height down when all other knobs fails to accomplish what you want.
-Divider_Wall_Height_Scale = 1.0;  // [0.05:0.01:1.50]
+Divider_Wall_Height_Scale = 1.0;  // [0.05:0.001:1.50]
 
 
 /* [Divider Wall Finger Slots] */
@@ -81,16 +81,16 @@ Make_Finger_Slots = false;
 Lengthwise_Finger_Slot = true;
 
 // Width of the finger slots.
-Finger_Slot_Width = 0.0; // [0.00:0.01:1.00]
+Finger_Slot_Width = 0.0; // [0.00:0.001:1.00]
 
 // Normalized position for the finger slots.
-Finger_Slot_Position = 0.5; // [0.00:0.01:1.00]
+Finger_Slot_Position = 0.5; // [0.00:0.001:1.00]
 
 // Normalized radius where 1=divider wall height, and 0=zero
-Finger_Slot_Radius = 1.0; // [0.00:0.01:10.00]
+Finger_Slot_Radius = 1.0; // [0.00:0.001:10.00]
 
 // Normalized lift of the slot above the floor
-Finger_Slot_Lift = 0.2; // [0.00:0.01:1.00]
+Finger_Slot_Lift = 0.2; // [0.00:0.001:1.00]
 
 /* [Tray Insert Parameters] */
 
@@ -98,16 +98,16 @@ Finger_Slot_Lift = 0.2; // [0.00:0.01:1.00]
 Make_Insert_Tray = false;
 
 // Apply this to the main tray.  Use this to adapt a larger tray to accespt an smaller insert tray. Set this to be the same height as the height of the insert tray. 
-Insert_Tray_Height = 0.0;  // [0.00:0.05:2.00]
+Insert_Tray_Height = 0.0;  // [0.00:0.001:2.00]
 
 // Apply this to the insert tray. Use this to specify how much free space is between the inner wall of the outer tray and the outer wall of the inner tray. Larger values will create a looser fit.
-Insert_Tray_Gap = 0.03;  // [0.00:0.005:2.00]
+Insert_Tray_Gap = 0.03;  // [0.00:0.001:2.00]
 
 // Corner posts give the insert something to rest on if you don't want any dividers walls in the main tray.
 Add_Corner_Posts = false;
 
 // Size of the corner post
-Corner_Post_Size = 0.2; //[0.1:0.05:1.5]
+Corner_Post_Size = 0.2; //[0.1:0.001:1.50]
 
 
 /* [Lid Parameters] */
@@ -118,7 +118,7 @@ Create_A_Lid = false;
 Lid_Handle_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes"]
 
 // How thick should the lid be.  This is the height above the top edge of the tray.  If you want a fully recessed lid, specify 0 here.
-Lid_Thickness = 0.07; // [0.00:0.01:0.50]
+Lid_Thickness = 0.07; // [0.00:0.001:0.50]
 
 // Creates a raised edge so a tray can be stacked on top of the lid.  This is only used when Lid_Thickness > 0.
 Interlocking_Lid = false;
@@ -139,10 +139,10 @@ Number_Of_Finger_Holes = 1; // [1, 2]
 Finger_Hole_Style = "Round"; // ["Square", "Round", "Diamond"]
 
 // Normalized length-wise position from the center of the tray to the finger hole(s). 0 will put the hole(s) in the center. 1.0 will center the hole on the outside of the edge.
-Finger_Hole_Position = 1.0; // [0.0:0.01:1.5]
+Finger_Hole_Position = 1.0; // [0.0:0.001:1.50]
 
 // Make them big enough for your fingers
-Finger_Hole_Diameter = 0.75; // [0.5:0.05:5]
+Finger_Hole_Diameter = 0.75; // [0.5:0.001:5.00]
 
 // Rotate the handle around the center point of the lid.
 Rotate_Handle = 0.0; // [ 0.00 : 45.00 : 180.00]
@@ -160,7 +160,7 @@ With_Dividers = false;
 // Choose between overlappping shell edge nad no interlock.
 Box_Top_Interlock_Type = "Shell"; // ["Shell", "None"]
 
-Box_Top_Interlock_Height = 0.15; // [0.0:0.01:1]
+Box_Top_Interlock_Height = 0.15; // [0.0:0.001:1.00]
 
 // Create one or more finger detents to help open the box.  If you choose two they will be on opposite sides of the box. These are created in the main box, not the box top.
 Finger_Detents = "One"; // ["None", "One", "Two"]
@@ -168,17 +168,17 @@ Finger_Detents = "One"; // ["None", "One", "Two"]
 Detent_Orientation = "Length"; // ["Length", "Width"]
 
 // A fuzzy knob to tune the height of the finger detent.
-Detent_Height = 0.95; // [0.0: 0.01 : 1.0] 
+Detent_Height = 0.95; // [0.0: 0.001 : 1.00] 
 
 // A fuzzy know to tune the width of the detent.
-Detent_Width = 0.5; // [0.0: 0.01: 1.0]
+Detent_Width = 0.5; // [0.0: 0.001: 1.00]
 
 /* [Interlocking Parameters] */
 // Specifies the height of the interlock panel extruded below the tray (and also the distance that the top of the dividers are below the upper tray edge. Specify 0 for non-interlocking stackers. You can still stack them, they just won't interlock.).
-Interlock_Height = 0.0; // [0.0:0.01:0.25]
+Interlock_Height = 0.0; // [0.0:0.001:0.25]
 
 // Only used when Interlock_Height==0, and intended for use with interlocking lids and trays, recessed lids, or to give a little more recess to insert trays.  When Interlock_Height > 0, it is used instead.
-Interlock_Divider_Wall_Recess = 0.0; // [0.0:0.01:0.25]
+Interlock_Divider_Wall_Recess = 0.0; // [0.0:0.001:0.25]
 
 // Specifies the gap between the interlock extrusion and the inner face of the outer wall of the tray. Largers values will give a looser fit.
 Interlock_Gap = 0.003;  // [0.0:0.001:0.10]
@@ -186,6 +186,7 @@ Interlock_Gap = 0.003;  // [0.0:0.001:0.10]
 // Make sure all variables for the customizer are declared above this line.  Other globals can be put below
 // this line to ensure they don't show up in the customizer UI.
 module __Customizer_Limit__ () {}
+
 
 Perimeter_Interlock = false;
 with_shell_interlock = Create_A_Box_Top && Box_Top_Interlock_Type == "Shell";
@@ -225,7 +226,9 @@ scaled_tray_width = (Scale_Units * _external_tray_width) -
     (2*((Make_Insert_Tray==true)?scaled_wall_thickness+scaled_Insert_Tray_Gap:0));
 scaled_tray_height = Scale_Units * _external_tray_heigth;
 
-scaled_box_top_height = Scale_Units * _external_box_height;
+x_bt_ht = with_storage_slots?Box_Top_Interlock_Height:0;
+
+scaled_box_top_height = Scale_Units * (_external_box_height + x_bt_ht);
 
 scaled_corner_radius = Scale_Units * Corner_Roundness * Tray_Wall_Thickness; 
 scaled_interlock_gap = Scale_Units * Interlock_Gap;
