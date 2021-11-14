@@ -115,7 +115,7 @@ Corner_Post_Size = 0.2; //[0.1:0.001:1.50]
 Create_A_Lid = false;
 
 
-Lid_Handle_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes"]
+Lid_Handle_Style = "Finger_Holes"; // ["No_Handle", "Finger_Holes", "Cone"]
 
 // How thick should the lid be.  This is the height above the top edge of the tray.  If you want a fully recessed lid, specify 0 here.
 Lid_Thickness = 0.07; // [0.00:0.001:0.50]
@@ -143,6 +143,10 @@ Finger_Hole_Position = 1.0; // [0.0:0.001:1.50]
 
 // Make them big enough for your fingers
 Finger_Hole_Diameter = 0.75; // [0.5:0.001:5.00]
+
+Cone_Height = 0.5;  // [0.0:0.001:1.50]
+Cone_Lower_Diameter = 0.25; // [0.0:0.001:1.50]
+Cone_Upper_Diameter = 0.50; // [0.0:0.001:1.50]
 
 // Rotate the handle around the center point of the lid.
 Rotate_Handle = 0.0; // [ 0.00 : 45.00 : 180.00]
@@ -458,6 +462,24 @@ module make_lid() {
                                 };
                             }
                         }
+                    }
+                }
+                if (Lid_Handle_Style == "Cone") {
+                    color([1,0.8,0.8]) {
+                    er = 2.5;
+                    ch = Cone_Height * Scale_Units - er;
+                    ud = Cone_Upper_Diameter * Scale_Units;
+                    translate([0,0,scaled_lid_thickness-0.001+ch/2]) {
+                        cylinder(ch, 
+                            Cone_Lower_Diameter * Scale_Units,
+                            ud,
+                            center=true, $fn=64);
+                            translate([0,0,ch/2]) {
+                                rotate_extrude(convexity = 10, $fn = 64)
+                                translate([ud-er, 0, 0])
+                                circle(r = er, $fn = 100);
+                            }
+                    }
                     }
                 }
             }
